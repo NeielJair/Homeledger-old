@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "673220636089",
+    "firebase_url": "https://homeledger-498d9.firebaseio.com",
+    "project_id": "homeledger-498d9",
+    "storage_bucket": "homeledger-498d9.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:673220636089:android:9cca1758040cc64b865a68",
+        "android_client_info": {
+          "package_name": "com.njair.homeledger"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "673220636089-dlt0v2ufc1gihet7rrjooe688vboseui.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.njair.homeledger",
+            "certificate_hash": "b9fd2816cec25c25ede8c37cf5993bf1a5999eb0"
+          }
+        },
+        {
+          "client_id": "673220636089-j856gqctp45lc7hsgg38g8jifiiao389.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyADK5H8G2128EV7br8XX1lxjSobDlwTeVM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "673220636089-j856gqctp45lc7hsgg38g8jifiiao389.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

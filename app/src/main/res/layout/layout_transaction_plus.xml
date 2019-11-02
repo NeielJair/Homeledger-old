@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<GridLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/gridlayout_transaction"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:clickable="true"
+    android:focusable="false"
+    android:background="@drawable/background_white_pressable"
+    android:rowCount="2">
+
+    <TextView
+        android:id="@+id/textViewTimestamp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_row="0"
+        android:layout_column="0"
+        android:layout_marginEnd="15dp"
+        android:paddingEnd="64dp"
+        android:textSize="12dp"
+        android:text="Timestamp" />
+
+    <ImageView
+        android:id="@+id/imageViewDelete"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_row="0"
+        android:layout_column="0"
+        android:layout_gravity="right"
+        android:background="@color/white"
+        app:srcCompat="@drawable/ic_clear_black_24dp" />
+
+    <LinearLayout
+        android:id="@+id/linearlayout_transaction"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:clickable="true"
+        android:focusable="true"
+        android:layout_row="1"
+        android:layout_column="0">
+
+        <TextView
+            android:id="@+id/textViewSender"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginStart="0dp"
+            android:layout_marginTop="0dp"
+            android:drawableTop="@drawable/ic_face_white_32dp"
+            android:drawableRight="@drawable/ic_line_black_24dp"
+            android:drawableTint="@color/colorPrimary"
+            android:gravity="center_horizontal"
+            android:text="Sender Name" />
+
+        <TextView
+            android:id="@+id/textViewAmount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginStart="0dp"
+            android:layout_marginTop="0dp"
+            android:drawableTop="@drawable/ic_empty_32dp"
+            android:drawablePadding="8dp"
+            android:gravity="center_horizontal"
+            android:text="$(some amount)"
+            android:textColor="@color/common_google_signin_btn_text_light_pressed" />
+
+        <TextView
+            android:id="@+id/textViewRecipient"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginStart="0dp"
+            android:layout_marginTop="0dp"
+            android:drawableLeft="@drawable/ic_arrow_forward_black_24dp"
+            android:drawableTop="@drawable/ic_face_white_32dp"
+            android:drawableTint="@color/colorAccent"
+            android:gravity="center_horizontal"
+            android:text="Recipient Name" />
+    </LinearLayout>
+</GridLayout>
