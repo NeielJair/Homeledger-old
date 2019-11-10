@@ -8,4 +8,6 @@
     <string name="title_transactions">Transactions</string>
     <string name="title_summary">Summary</string>
     <string name="title_members">Members</string>
+    <string name="owes">owes</string>
+    <string name="pays">pays</string>
 </resources>

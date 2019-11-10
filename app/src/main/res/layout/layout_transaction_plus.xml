@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<GridLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/gridlayout_transaction"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/constraintlayout_transaction"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:clickable="true"
-    android:focusable="false"
     android:background="@drawable/background_white_pressable"
-    android:rowCount="2">
+    android:clickable="true"
+    android:focusable="true">
 
     <TextView
         android:id="@+id/textViewTimestamp"
@@ -15,10 +15,13 @@
         android:layout_height="wrap_content"
         android:layout_row="0"
         android:layout_column="0"
-        android:layout_marginEnd="15dp"
         android:paddingEnd="64dp"
+        android:text="Timestamp"
         android:textSize="12dp"
-        android:text="Timestamp" />
+        android:clickable="false"
+        android:focusable="false"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <ImageView
         android:id="@+id/imageViewDelete"
@@ -28,55 +31,133 @@
         android:layout_column="0"
         android:layout_gravity="right"
         android:background="@color/white"
+        android:clickable="false"
+        android:focusable="false"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
         app:srcCompat="@drawable/ic_clear_black_24dp" />
 
-    <LinearLayout
-        android:id="@+id/linearlayout_transaction"
-        android:layout_width="match_parent"
+    <ImageView
+        android:id="@+id/imageViewSenderIcon"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:tint="@color/colorPrimary"
+        android:clickable="false"
+        android:focusable="false"
+        app:layout_constraintBottom_toTopOf="@+id/textViewSender"
+        app:layout_constraintEnd_toEndOf="@+id/textViewSender"
+        app:layout_constraintStart_toStartOf="@+id/textViewSender"
+        app:layout_constraintTop_toBottomOf="@+id/imageViewDelete"
+        app:srcCompat="@drawable/ic_face_white_32dp" />
+
+    <TextView
+        android:id="@+id/textViewSender"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:gravity="right"
+        android:text="Sender Name"
+        android:clickable="false"
+        android:focusable="false"
+        android:importantForAccessibility="no"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/imageViewSenderLine"
+        app:layout_constraintTop_toBottomOf="@+id/imageViewSenderIcon" />
+
+    <ImageView
+        android:id="@+id/imageViewSenderLine"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:tint="@color/colorPrimary"
+        android:clickable="false"
+        android:focusable="false"
+        app:layout_constraintBottom_toBottomOf="@+id/textViewSender"
+        app:layout_constraintEnd_toStartOf="@+id/barrierLeft"
+        app:layout_constraintTop_toTopOf="@+id/textViewSender"
+        app:srcCompat="@drawable/ic_line_black_24dp" />
+
+    <TextView
+        android:id="@+id/textViewAmount"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
         android:gravity="center_horizontal"
-        android:clickable="true"
-        android:focusable="true"
-        android:layout_row="1"
-        android:layout_column="0">
+        android:text="$(some amount)"
+        android:textColor="@color/common_google_signin_btn_text_light_pressed"
+        android:clickable="false"
+        android:focusable="false"
+        android:importantForAccessibility="no"
+        app:layout_constraintBottom_toBottomOf="@+id/imageViewRecipientIcon"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/imageViewRecipientIcon" />
 
-        <TextView
-            android:id="@+id/textViewSender"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginStart="0dp"
-            android:layout_marginTop="0dp"
-            android:drawableTop="@drawable/ic_face_white_32dp"
-            android:drawableRight="@drawable/ic_line_black_24dp"
-            android:drawableTint="@color/colorPrimary"
-            android:gravity="center_horizontal"
-            android:text="Sender Name" />
+    <TextView
+        android:id="@+id/textViewMovement"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:gravity="center_horizontal"
+        android:text="movement"
+        android:textColor="@color/common_google_signin_btn_text_light_pressed"
+        android:clickable="false"
+        android:focusable="false"
+        android:importantForAccessibility="no"
+        app:layout_constraintBottom_toBottomOf="@+id/imageViewSenderLine"
+        app:layout_constraintEnd_toEndOf="@+id/textViewAmount"
+        app:layout_constraintStart_toStartOf="@+id/textViewAmount"
+        app:layout_constraintTop_toTopOf="@+id/imageViewSenderLine" />
 
-        <TextView
-            android:id="@+id/textViewAmount"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginStart="0dp"
-            android:layout_marginTop="0dp"
-            android:drawableTop="@drawable/ic_empty_32dp"
-            android:drawablePadding="8dp"
-            android:gravity="center_horizontal"
-            android:text="$(some amount)"
-            android:textColor="@color/common_google_signin_btn_text_light_pressed" />
+    <ImageView
+        android:id="@+id/imageViewRecipientIcon"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:tint="@color/colorAccent"
+        android:clickable="false"
+        android:focusable="false"
+        app:layout_constraintBottom_toTopOf="@+id/textViewRecipient"
+        app:layout_constraintEnd_toEndOf="@+id/textViewRecipient"
+        app:layout_constraintStart_toStartOf="@+id/textViewRecipient"
+        app:layout_constraintTop_toBottomOf="@+id/imageViewDelete"
+        app:srcCompat="@drawable/ic_face_white_32dp" />
 
-        <TextView
-            android:id="@+id/textViewRecipient"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginStart="0dp"
-            android:layout_marginTop="0dp"
-            android:drawableLeft="@drawable/ic_arrow_forward_black_24dp"
-            android:drawableTop="@drawable/ic_face_white_32dp"
-            android:drawableTint="@color/colorAccent"
-            android:gravity="center_horizontal"
-            android:text="Recipient Name" />
-    </LinearLayout>
-</GridLayout>
+    <TextView
+        android:id="@+id/textViewRecipient"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:gravity="left"
+        android:text="Recipient Name"
+        android:clickable="false"
+        android:focusable="false"
+        android:importantForAccessibility="no"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/imageViewRecipientLine"
+        app:layout_constraintTop_toBottomOf="@+id/imageViewRecipientIcon" />
+
+    <ImageView
+        android:id="@+id/imageViewRecipientLine"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:tint="@color/colorAccent"
+        android:clickable="false"
+        android:focusable="false"
+        app:layout_constraintBottom_toBottomOf="@+id/textViewRecipient"
+        app:layout_constraintStart_toEndOf="@+id/barrierRight"
+        app:layout_constraintTop_toTopOf="@+id/textViewRecipient"
+        app:srcCompat="@drawable/ic_arrow_forward_black_24dp" />
+
+    <androidx.constraintlayout.widget.Barrier
+        android:id="@+id/barrierLeft"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:barrierDirection="left"
+        app:constraint_referenced_ids="textViewAmount,textViewMovement"/>
+
+    <androidx.constraintlayout.widget.Barrier
+        android:id="@+id/barrierRight"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:barrierDirection="right"
+        app:constraint_referenced_ids="textViewAmount,textViewMovement"/>
+</androidx.constraintlayout.widget.ConstraintLayout>

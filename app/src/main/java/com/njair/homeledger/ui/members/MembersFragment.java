@@ -46,8 +46,9 @@ public class MembersFragment extends Fragment {
 
     private MembersViewModel membersViewModel;
     private List<Member> memberList = new ArrayList<>();
-    private final int[] colorList = {Color.RED, Color.BLUE, Color.rgb(0, 128, 0),
-            Color.rgb(204,204,0), Color.rgb(255, 165, 0), Color.rgb(128,0,128)};
+    private final int[] colorList = {Color.RED, Color.BLUE, Color.rgb(0, 0, 128),
+            Color.rgb(204, 0, 204), Color.rgb(0, 128, 0), Color.rgb(204,204,0),
+            Color.rgb(255, 165, 0), Color.rgb(128,0,128), Color.rgb(204, 0, 102), Color.rgb(218,165,32)};
 
     public View onCreateView(@NonNull final LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
@@ -133,7 +134,7 @@ public class MembersFragment extends Fragment {
 
     private boolean checkNameAvailable(String name){
         for(Member member : memberList){
-            if(member.getName().equals(name)){
+            if(member.getName().trim().equals(name.trim())){
                 return false;
             }
         }
@@ -199,7 +200,9 @@ public class MembersFragment extends Fragment {
                         case MotionEvent.ACTION_DOWN: {
                             IVTrash.setColorFilter(member.color/3);
                             IVTrash.invalidate();
-
+                            break;
+                        }
+                        case MotionEvent.ACTION_UP:
                             AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
                             builder.setMessage("Delete member " + member.getName() + "?")
                                     .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
@@ -210,9 +213,7 @@ public class MembersFragment extends Fragment {
                                     .setNegativeButton("No", new DialogInterface.OnClickListener() {
                                         public void onClick(DialogInterface dialog, int id) {}
                                     }).show();
-                            break;
-                        }
-                        case MotionEvent.ACTION_UP:
+
                         case MotionEvent.ACTION_CANCEL: {
                             IVTrash.setColorFilter(member.color);
                             IVTrash.invalidate();
@@ -232,10 +233,16 @@ public class MembersFragment extends Fragment {
                 @Override
                 public boolean onTouch(View v, MotionEvent event) {
                     switch (event.getAction()) {
-                        case MotionEvent.ACTION_DOWN: {
-                            if(memberList.size() < colorList.length){
-                                IVBrush.setColorFilter(member.color/3);
+                        case MotionEvent.ACTION_DOWN:{
+                            IVBrush.setColorFilter(member.color/3);
+                            IVBrush.invalidate();
+                            break;}
 
+                        case MotionEvent.ACTION_UP:
+                            IVBrush.setColorFilter(member.color);
+                            IVBrush.invalidate();
+
+                            if(memberList.size() < colorList.length){
                                 ColorPicker colorPicker = new ColorPicker(getActivity());
                                 colorPicker.setTitle("Choose a color for " + member.getName());
                                 colorPicker.setColors(removeColorsFromArrayToHex(colorList));
@@ -248,34 +255,23 @@ public class MembersFragment extends Fragment {
 
                                             update(newList);
                                         }
-
-                                        IVBrush.setColorFilter(member.color);
-                                        IVBrush.invalidate();
                                     }
 
                                     @Override
-                                    public void onCancel(){
-                                        IVBrush.setColorFilter(member.color);
-                                        IVBrush.invalidate();
-                                    }
+                                    public void onCancel() {}
                                 });
 
                                 colorPicker.setRoundColorButton(true);
                                 colorPicker.show();
-                                IVBrush.invalidate();
-                                break;
-                            } else {
-                                IVBrush.setColorFilter(member.color);
-                                IVBrush.invalidate();
+                            } else
                                 Snackbar.make(v, "No colors are available.", Snackbar.LENGTH_LONG).show();
-                            }
-                        }
-                        case MotionEvent.ACTION_UP:
-                        case MotionEvent.ACTION_CANCEL: {
+
+                            break;
+
+                        case MotionEvent.ACTION_CANCEL:
                             IVBrush.setColorFilter(member.color);
                             IVBrush.invalidate();
                             break;
-                        }
                     }
 
                     return false;

@@ -28,18 +28,38 @@
         android:layout_gravity="center_vertical"
         android:spinnerMode="dropdown"/>
 
-    <EditText
-        android:id="@+id/editTextAmount"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingTop="16dp"
-        android:paddingBottom="16dp"
-        android:paddingStart="8dp"
-        android:paddingEnd="8dp"
-        android:ems="10"
-        android:hint="Amount"
-        android:layout_gravity="center_vertical"
-        android:inputType="numberDecimal" />
+        android:orientation="horizontal">
+
+        <EditText
+            android:id="@+id/editTextAmount"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="16dp"
+            android:paddingBottom="16dp"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:ems="10"
+            android:hint="Amount"
+            android:layout_weight="1"
+            android:layout_gravity="center_vertical"
+            android:inputType="numberDecimal" />
+
+        <Spinner
+            android:id="@+id/spinnerMovement"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingTop="16dp"
+            android:paddingBottom="16dp"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:layout_weight="0"
+            android:entries="@array/choose_movement"
+            android:layout_gravity="center_vertical"
+            android:spinnerMode="dropdown"/>
+    </LinearLayout>
 
     <Spinner
         android:id="@+id/spinnerRecipient"

@@ -5,7 +5,7 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.Color;
-import android.graphics.drawable.Drawable;
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -19,13 +19,13 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.GridLayout;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.NonNull;
+import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.core.app.NotificationCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProviders;
@@ -34,6 +34,8 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.snackbar.Snackbar;
+import com.google.firebase.database.annotations.NotNull;
 import com.njair.homeledger.R;
 import com.njair.homeledger.Service.Member;
 import com.njair.homeledger.Service.Transaction;
@@ -46,6 +48,8 @@ public class TransactionsFragment extends Fragment {
 
     private TransactionsViewModel transactionsViewModel;
     private List<Transaction> transactionList = new ArrayList<>();
+
+    private FloatingActionButton fabWrite;
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
@@ -69,7 +73,7 @@ public class TransactionsFragment extends Fragment {
         transactionsRecyclerView.addItemDecoration(new DividerItemDecoration(getContext(), DividerItemDecoration.VERTICAL));
 
         //region [Handle FAB: add transaction]
-        final FloatingActionButton fabWrite = root.findViewById(R.id.fabWrite);
+        fabWrite = root.findViewById(R.id.fabWrite);
         fabWrite.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -85,6 +89,7 @@ public class TransactionsFragment extends Fragment {
                 final EditText editTextDescription = dialogLayout.findViewById(R.id.editTextDescription);
                 final Spinner spinnerSender = dialogLayout.findViewById(R.id.spinnerSender);
                 final EditText editTextAmount = dialogLayout.findViewById(R.id.editTextAmount);
+                final Spinner spinnerMovement = dialogLayout.findViewById(R.id.spinnerMovement);
                 final Spinner spinnerRecipient = dialogLayout.findViewById(R.id.spinnerRecipient);
 
                 final ArrayAdapter<String> aASender = new ArrayAdapter<>(getActivity(), android.R.layout.simple_spinner_dropdown_item,
@@ -102,7 +107,8 @@ public class TransactionsFragment extends Fragment {
                                         new Transaction(editTextDescription.getText().toString(),
                                                 Member.findMember(memberList, spinnerSender.getSelectedItem().toString()),
                                                 Member.findMember(memberList, spinnerRecipient.getSelectedItem().toString()),
-                                                Float.parseFloat(editTextAmount.getText().toString()))
+                                                Float.parseFloat(editTextAmount.getText().toString()),
+                                                spinnerMovement.getSelectedItem().equals("Owes"))
                                 );
                             }
                         })
@@ -207,6 +213,8 @@ public class TransactionsFragment extends Fragment {
 
             final Transaction transaction = transactions.get(position);
 
+            holder.textViewTimestamp.setText(transaction.timestamp);
+
             //region [Handle imageViewDelete: delete transaction]
             final ImageView IVDelete = holder.imageViewDelete;
             IVDelete.setColorFilter(Color.BLACK);
@@ -223,6 +231,9 @@ public class TransactionsFragment extends Fragment {
                                     .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                                         public void onClick(DialogInterface dialog, int id) {
                                             removeItem(position);
+
+                                            if(fabWrite.getVisibility() != View.INVISIBLE)
+                                                fabWrite.show();
                                         }
                                     })
                                     .setNegativeButton("No", new DialogInterface.OnClickListener() {
@@ -242,36 +253,49 @@ public class TransactionsFragment extends Fragment {
             });
             //endregion
 
-            //region [Handle transactionLinearLayout: display description]
-            holder.transactionLinearLayout.setOnTouchListener(new View.OnTouchListener() {
+            //region [Handle transactionConstraintLayout: display description]
+            holder.transactionConstraintLayout.setOnTouchListener(new View.OnTouchListener() {
                 public boolean onTouch(View v, MotionEvent event) {
-                    switch(event.getAction()){
-                        case(MotionEvent.ACTION_DOWN):
-                            ((GridLayout)v.getParent()).setPressed(true);
-                            break;
+                    if((event.getAction() == MotionEvent.ACTION_UP) && (!transaction.description.equals("")))
+                        Snackbar.make(getActivity().findViewById(android.R.id.content), transaction.description, Snackbar.LENGTH_LONG)
+                                .setAction("Dismiss", new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {}
+                        })
+                                .show();
 
-                        case(MotionEvent.ACTION_UP):
-                            if(!transaction.description.equals(""))
-                                Toast.makeText(getActivity(), transaction.description, Toast.LENGTH_LONG).show();
-
-                        case(MotionEvent.ACTION_CANCEL):
-                            ((GridLayout)v.getParent()).setPressed(false);
-                            break;
-                    }
                     return false;
                 }
             });
             //endregion
 
+            holder.imageViewSenderIcon.setColorFilter(transaction.debtor.color);
             holder.textViewSender.setText(transaction.debtor.getName());
-            drawableChangeTint(holder.textViewSender.getCompoundDrawables(), transaction.debtor.color);
+            holder.imageViewSenderLine.setColorFilter(transaction.debtor.color);
 
             holder.textViewAmount.setText(transaction.getAmount());
 
-            holder.textViewRecipient.setText(transaction.lender.getName());
-            drawableChangeTint(holder.textViewRecipient.getCompoundDrawables(), transaction.lender.color);
+            if(transaction.movement == Transaction.t_owes)
+                holder.textViewMovement.setText(R.string.owes);
+            else{
+                holder.textViewMovement.setText(R.string.pays);
+                holder.textViewMovement.setTypeface(null, Typeface.BOLD);
+            }
 
-            holder.textViewTimestamp.setText(transaction.timestamp);
+
+            holder.textViewMovement.setTextColor(transaction.blendedColors(.5f));
+
+            holder.imageViewRecipientIcon.setColorFilter(transaction.lender.color);
+            holder.textViewRecipient.setText(transaction.lender.getName());
+            holder.imageViewRecipientLine.setColorFilter(transaction.lender.color);
+        }
+
+        private int blendColors(int color1, int color2, float ratio) {
+            final float inverseRation = 1f - ratio;
+            float r = (Color.red(color1) * ratio) + (Color.red(color2) * inverseRation);
+            float g = (Color.green(color1) * ratio) + (Color.green(color2) * inverseRation);
+            float b = (Color.blue(color1) * ratio) + (Color.blue(color2) * inverseRation);
+            return Color.rgb((int) r, (int) g, (int) b);
         }
 
         @Override
@@ -298,30 +322,39 @@ public class TransactionsFragment extends Fragment {
         }
 
         public class ViewHolder extends RecyclerView.ViewHolder{
-            LinearLayout transactionLinearLayout;
+            ConstraintLayout transactionConstraintLayout;
 
-            ImageView imageViewDelete;
-            TextView textViewSender;
-            TextView textViewAmount;
-            TextView textViewRecipient;
             TextView textViewTimestamp;
+            ImageView imageViewDelete;
+
+            ImageView imageViewSenderIcon;
+            TextView textViewSender;
+            ImageView imageViewSenderLine;
+
+            TextView textViewAmount;
+            TextView textViewMovement;
+
+            ImageView imageViewRecipientIcon;
+            TextView textViewRecipient;
+            ImageView imageViewRecipientLine;
 
             public ViewHolder(View itemView){
                 super(itemView);
-                transactionLinearLayout = itemView.findViewById(R.id.linearlayout_transaction);
+                transactionConstraintLayout = itemView.findViewById(R.id.constraintlayout_transaction);
 
-                imageViewDelete = itemView.findViewById(R.id.imageViewDelete);
-                textViewSender = itemView.findViewById(R.id.textViewSender);
-                textViewAmount = itemView.findViewById(R.id.textViewAmount);
-                textViewRecipient = itemView.findViewById(R.id.textViewRecipient);
                 textViewTimestamp = itemView.findViewById(R.id.textViewTimestamp);
-            }
-        }
+                imageViewDelete = itemView.findViewById(R.id.imageViewDelete);
 
-        private void drawableChangeTint(Drawable[] drawables, int color){
-            for(Drawable drawable : drawables){
-                if(drawable != null)
-                    drawable.setTint(color);
+                imageViewSenderIcon = itemView.findViewById(R.id.imageViewSenderIcon);
+                textViewSender = itemView.findViewById(R.id.textViewSender);
+                imageViewSenderLine = itemView.findViewById(R.id.imageViewSenderLine);
+
+                textViewAmount = itemView.findViewById(R.id.textViewAmount);
+                textViewMovement = itemView.findViewById(R.id.textViewMovement);
+
+                imageViewRecipientIcon = itemView.findViewById(R.id.imageViewRecipientIcon);
+                textViewRecipient = itemView.findViewById(R.id.textViewRecipient);
+                imageViewRecipientLine = itemView.findViewById(R.id.imageViewRecipientLine);
             }
         }
     }

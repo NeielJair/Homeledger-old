@@ -2,10 +2,12 @@ package com.njair.homeledger.Service;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.util.Log;
 import android.widget.TextView;
 
+import com.google.android.gms.common.util.Predicate;
 import com.njair.homeledger.R;
 import com.njair.homeledger.ui.TransactionView;
 
@@ -15,13 +17,18 @@ import java.util.Currency;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.stream.Collectors;
 
 public class Transaction {
+    public static final boolean t_pays = false;
+    public static final boolean t_owes = true;
+
     public String description;
     public Member debtor;
     public float amount;
     public Member lender;
     public String timestamp;
+    public boolean movement;
 
     public static final String timeStampFormat = "dd/MM/yyyy, HH:mm";
 
@@ -31,6 +38,7 @@ public class Transaction {
         this.lender = lender;
         this.amount = amount;
         this.timestamp = new SimpleDateFormat(timeStampFormat, Locale.getDefault()).format(new Date());
+        this.movement = t_owes;
 
         order();
 
@@ -44,6 +52,21 @@ public class Transaction {
         this.lender = lender;
         this.amount = amount;
         this.timestamp = new SimpleDateFormat(timeStampFormat, Locale.getDefault()).format(new Date());
+        this.movement = t_owes;
+
+        order();
+
+        debtor.addFunds(-amount);
+        lender.addFunds(amount);
+    }
+
+    public Transaction(String description, Member debtor, Member lender, float amount, boolean movement){
+        this.description = description;
+        this.debtor = debtor;
+        this.lender = lender;
+        this.amount = amount;
+        this.timestamp = new SimpleDateFormat(timeStampFormat, Locale.getDefault()).format(new Date());
+        this.movement = movement;
 
         order();
 
@@ -57,6 +80,21 @@ public class Transaction {
         this.lender = lender;
         this.amount = amount;
         this.timestamp = timestamp;
+        this.movement = t_owes;
+
+        order();
+
+        debtor.addFunds(-amount);
+        lender.addFunds(amount);
+    }
+
+    public Transaction(String description, Member debtor, Member lender, float amount, String timestamp, boolean movement){
+        this.description = description;
+        this.debtor = debtor;
+        this.lender = lender;
+        this.amount = amount;
+        this.timestamp = timestamp;
+        this.movement = movement;
 
         order();
 
@@ -65,7 +103,7 @@ public class Transaction {
     }
 
     public String toString(){
-        return debtor.getName() + " pays " + lender.getName() + " "
+        return debtor.getName() + ((movement == t_owes) ? " owes " : " pays ") + lender.getName() + " "
                 + Currency.getInstance(Locale.getDefault()).getSymbol() + amount;
     }
 
@@ -80,15 +118,40 @@ public class Transaction {
         order();
     }
 
-    public void flip(){
-        Transaction transaction = this;
-        debtor = transaction.lender;
-        lender = transaction.debtor;
-        amount = -transaction.amount;
+    public Transaction setMovement(boolean movement){
+        if(!(this.movement == movement)){
+            Member _debtor = debtor;
+            debtor = lender;
+            lender = _debtor;
+            this.movement = movement;
+        }
+
+        return this;
     }
 
     public void order(){
-        if(amount < 0) flip();
+        if(amount < 0) {
+            Member _debtor = debtor;
+            debtor = lender;
+            lender = _debtor;
+            amount *= -1;
+        }
+    }
+
+    public static List<Transaction> filterByMember(List<Transaction> transactions, Member member, boolean isDebtor){
+        List<Transaction> ts = new ArrayList<>();
+
+        for(Transaction t : transactions){
+            if(isDebtor){
+                if(t.debtor.equals(member))
+                    ts.add(t);
+            } else {
+                if(t.lender.equals(member))
+                    ts.add(t);
+            }
+        }
+
+        return ts;
     }
 
     public boolean sharesParties(Transaction t){
@@ -99,36 +162,40 @@ public class Transaction {
         Transaction res = t;
 
         if(t.debtor.equals(_t.debtor))
-            res.addAmount(_t.amount);
-        else if(t.debtor.equals(_t.lender))
-            res.addAmount(-_t.amount);
+            res.addAmount((t.movement == _t.movement) ? _t.amount : -_t.amount);
+        else if( t.debtor.equals(_t.lender))
+            res.addAmount((t.movement == _t.movement) ? -_t.amount : _t.amount);
+
+        res.order();
 
         return res;
     }
 
-    public void adaptView(TransactionView view){
-        TextView textViewSender;
-        TextView textViewAmount;
-        TextView textViewRecipient;
-
-        textViewSender = view.findViewById(R.id.textViewSender);
-        textViewAmount = view.findViewById(R.id.textViewAmount);
-        textViewRecipient = view.findViewById(R.id.textViewRecipient);
-
-        textViewSender.setText(debtor.getName());
-        drawableChangeTint(textViewSender.getCompoundDrawables(), debtor.color);
-
-        textViewAmount.setText(getAmount());
-
-        textViewRecipient.setText(lender.getName());
-        drawableChangeTint(textViewRecipient.getCompoundDrawables(), lender.color);
+    public int blendedColors(float ratio){
+        final float inverseRatio = 1f - ratio;
+        return Color.rgb((int) ((Color.red(debtor.color) * ratio) + (Color.red(lender.color) * inverseRatio)),
+                (int) ((Color.green(debtor.color) * ratio) + (Color.green(lender.color) * inverseRatio)),
+                (int) ((Color.blue(debtor.color) * ratio) + (Color.blue(lender.color) * inverseRatio)));
     }
 
-    private void drawableChangeTint(Drawable[] drawables, int color){
-        for(Drawable drawable : drawables){
-            if(drawable != null)
-                drawable.setTint(color);
+    public static List<Member> getDebtors(List<Transaction> transactions, boolean excludeLenders){
+        List<Member> members = new ArrayList<>();
+
+        for(Transaction t : transactions){
+            boolean repeated = false;
+
+            for(Member member : members){
+                if(member.equals(t.debtor) || (excludeLenders && member.equals(t.lender))) {
+                    repeated = true;
+                    break;
+                }
+            }
+
+            if(!repeated)
+                members.add(t.debtor);
         }
+
+        return members;
     }
 
     public static List<Transaction> sumTransactions(List<Transaction> transactions){
@@ -137,12 +204,14 @@ public class Transaction {
         for(Transaction transaction : transactions){
             boolean shared = false;
 
+            Transaction t = transaction;
+            t.setMovement(t_owes);
+
             for(int i = 0; i < summary.size(); i++){
-                Transaction t = summary.get(i);
+                Transaction _t = summary.get(i);
 
-                if(transaction.sharesParties(t)){
-                    summary.set(i, Transaction.combine(transaction, t));
-
+                if(transaction.sharesParties(_t)){
+                    summary.set(i, Transaction.combine(t, _t));
 
                     Log.d("sumTransaction "+i, "Summed " + summary.get(i).toString());
 
@@ -151,13 +220,18 @@ public class Transaction {
                 }
             }
 
-            if(!shared){
-                Log.d("addedTransaction ", "added " + transaction.toString());
-                summary.add(transaction);
-            }
+            if(!shared)
+                summary.add(t);
         }
 
-        return summary;
+        List<Transaction> newSummary = new ArrayList<>();
+
+        for(int i = 0; i < summary.size(); i++){
+            if(summary.get(i).amount != 0f)
+                newSummary.add(summary.get(i));
+        }
+
+        return newSummary;
     }
 
     public static void writeToSharedPreferences(Context appContext, List<Transaction> transactions){
@@ -180,6 +254,8 @@ public class Transaction {
             editor.putFloat("t"+i + "_amount", transaction.amount);
 
             editor.putString("t"+i + "_timestamp", transaction.timestamp);
+
+            editor.putBoolean("t"+i + "_movement", transaction.movement);
         }
 
         editor.apply();
@@ -196,13 +272,8 @@ public class Transaction {
                     Member.getFromSharedPreferences(appContext, settings.getString("t"+i + "_debtorName", "")),
                     Member.getFromSharedPreferences(appContext, settings.getString("t"+i + "_lenderName", "")),
                     settings.getFloat("t"+i + "_amount", 0f),
-                    settings.getString("t"+i + "_timestamp", new SimpleDateFormat(timeStampFormat, Locale.getDefault()).format(new Date()))));
-
-            /*transactions.add(new Transaction(settings.getString("t"+i + "_description", ""),
-                    new Member(settings.getString("t"+i + "_senderName", ""), settings.getInt("t"+i + "_senderColor", Color.RED)),
-                    new Member(settings.getString("t"+i + "_recipientName", ""), settings.getInt("t"+i + "_recipientColor", Color.RED)),
-                    settings.getFloat("t"+i + "_amount", 0f),
-                    settings.getString("t"+i + "_timestamp", new SimpleDateFormat(timeStampFormat, Locale.getDefault()).format(new Date()))));*/
+                    settings.getString("t"+i + "_timestamp", new SimpleDateFormat(timeStampFormat, Locale.getDefault()).format(new Date())),
+                    settings.getBoolean("t"+i + "_movement", Transaction.t_owes)));
         }
 
         return transactions;

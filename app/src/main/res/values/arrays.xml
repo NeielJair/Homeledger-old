@@ -7,4 +7,9 @@
     <string-array name="choose_recipient">
         <item>Choose the lender</item>
     </string-array>
+
+    <string-array name="choose_movement">
+        <item>Owes</item>
+        <item>Pays</item>
+    </string-array>
 </resources>
