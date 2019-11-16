@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Homeledger</string>
+    <string name="app_name" translatable="false">Homeledger</string>
     <string name="action_settings">Settings</string>
     <string name="msg_token_fmt" translatable="false">InstanceID Token: %s</string>
     <string name="msg_subscribed">Subscription successful</string>
@@ -10,4 +10,18 @@
     <string name="title_members">Members</string>
     <string name="owes">owes</string>
     <string name="pays">pays</string>
+    <string name="dismiss">Dismiss</string>
+    <string name="sortby">Sort by</string>
+    <string name="newesttooldest">Newest to oldest</string>
+    <string name="oldesttonewest">Oldest to newest</string>
+    <string name="lowesttohighest">Lowest to highest</string>
+    <string name="highesttolowest">Highest to lowest</string>
+    <string name="debtsfirst">Debts first</string>
+    <string name="loansfirst">Loans first</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="deletetransaction">Delete transaction</string>
+    <string name="atDate">at</string>
+    <string name="ok">Ok</string>
+    <string name="cancel">Cancel</string>
 </resources>

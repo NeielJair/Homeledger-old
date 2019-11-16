@@ -17,6 +17,7 @@ public class Member {
     public int color;
     public float funds;
     public Map<Member, Float> loanPortfolio = new HashMap<>();
+    public static Member dummy = new Member("", Color.BLACK);
 
     public Member(String name, int color){
         this.name = name;
@@ -49,10 +50,6 @@ public class Member {
         funds += amount;
     }
 
-    public void lendTo(Member recipient){
-        //float
-    }
-
     public boolean equals(Member member){
         return getName().equals(member.getName());
     }
@@ -63,7 +60,7 @@ public class Member {
                 return member;
         }
 
-        return null;
+        return dummy;
     }
 
     public static List<String> getNameList(List<Member> members){

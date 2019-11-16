@@ -12,4 +12,8 @@
         <item>Owes</item>
         <item>Pays</item>
     </string-array>
+
+    <string-array name="choose_member">
+        <item>Member</item>
+    </string-array>
 </resources>

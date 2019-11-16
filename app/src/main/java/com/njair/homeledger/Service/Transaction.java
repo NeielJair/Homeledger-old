@@ -3,25 +3,24 @@ package com.njair.homeledger.Service;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Color;
-import android.graphics.drawable.Drawable;
 import android.util.Log;
-import android.widget.TextView;
 
-import com.google.android.gms.common.util.Predicate;
-import com.njair.homeledger.R;
-import com.njair.homeledger.ui.TransactionView;
-
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Currency;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
-import java.util.stream.Collectors;
 
 public class Transaction {
     public static final boolean t_pays = false;
     public static final boolean t_owes = true;
+
+    public static final int st_timestamp = 0;
+    public static final int st_member = 1;
+    public static final int st_amount = 2;
+    public static final int st_movement = 3;
 
     public String description;
     public Member debtor;
@@ -212,9 +211,6 @@ public class Transaction {
 
                 if(transaction.sharesParties(_t)){
                     summary.set(i, Transaction.combine(t, _t));
-
-                    Log.d("sumTransaction "+i, "Summed " + summary.get(i).toString());
-
                     shared = true;
                     break;
                 }
@@ -234,7 +230,146 @@ public class Transaction {
         return newSummary;
     }
 
-    public static void writeToSharedPreferences(Context appContext, List<Transaction> transactions){
+    public static List<Transaction> sortByTransactions(List<Transaction> transactionList, SortByStruct sortByStruct){
+        int sortType = sortByStruct.sortType;
+        boolean lowestToHighest = sortByStruct.lowestToHighest;
+        Member member = sortByStruct.member;
+
+        if(sortType != st_timestamp)
+            Transaction.sortByTransactions(transactionList, new SortByStruct(st_timestamp, true));
+
+        int size = transactionList.size();
+
+        Transaction t;
+
+        switch(sortType){
+            case st_timestamp:
+                SimpleDateFormat formatter = new SimpleDateFormat(timeStampFormat, Locale.getDefault());
+
+                for(int i = 0; i < size; i++){
+                    t = transactionList.get(i);
+                    Date curTimestamp;
+                    Date tempTimestamp;
+                    int j = i - 1;
+
+                    try{
+                        curTimestamp = formatter.parse(t.timestamp);
+
+                        while(j >= 0){
+                            tempTimestamp = formatter.parse(transactionList.get(j).timestamp);
+
+                            if((lowestToHighest) ? (curTimestamp.before(tempTimestamp)) : (curTimestamp.after(tempTimestamp)))
+                                break;
+
+                            transactionList.set(j + 1, transactionList.get(j));
+                            j--;
+                        }
+
+                        transactionList.set(j + 1, t);
+                    } catch (ParseException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+                break;
+
+            case st_member:
+                Transaction _t;
+                Member curMember;
+                Member tempMember;
+                int slots = 0;
+
+                for(int i = 0; i < size; i++){
+                    t = transactionList.get(i);
+                    curMember = t.debtor;
+
+                    int j = i - 1;
+
+                    while(j >= 0 && curMember.equals(member)){
+                        _t = transactionList.get(j);
+                        tempMember = _t.debtor;
+
+                        if(curMember.equals(tempMember))
+                            break;
+
+                        transactionList.set(j + 1, _t);
+                        j--;
+                    }
+
+                    if(curMember.equals(member))
+                        slots++;
+                    transactionList.set(j + 1, t);
+                }
+
+                for(int i = slots; i < size; i++){
+                    t = transactionList.get(i);
+                    curMember = t.lender;
+
+                    int j = i - 1;
+
+                    while(j >= slots && curMember.equals(member)){
+                        _t = transactionList.get(j);
+                        tempMember = _t.lender;
+
+                        if(curMember.equals(tempMember))
+                            break;
+
+                        transactionList.set(j + 1, _t);
+                        j--;
+                    }
+
+                    transactionList.set(j + 1, t);
+                }
+
+                break;
+
+            case st_amount:
+                for(int i = 0; i < size; i++){
+                    t = transactionList.get(i);
+                    float curAmount= t.amount;
+                    float tempAmount;
+                    int j = i - 1;
+
+                    while(j >= 0){
+                        tempAmount = transactionList.get(j).amount;
+
+                        if(!((lowestToHighest) ? (curAmount <= tempAmount) : (curAmount >= tempAmount)))
+                            break;
+
+                        transactionList.set(j + 1, transactionList.get(j));
+                        j--;
+                    }
+
+                    transactionList.set(j + 1, t);
+                }
+
+                break;
+
+            case st_movement:
+                for(int i = 0; i < size; i++){
+                    t = transactionList.get(i);
+                    int j = i - 1;
+
+                    while(j >= 0){
+                        if(!((lowestToHighest) ? (t.movement == t_owes) : (t.movement == t_pays)))
+                            break;
+
+                        transactionList.set(j + 1, transactionList.get(j));
+                        j--;
+                    }
+
+                    transactionList.set(j + 1, t);
+                }
+
+                break;
+        }
+
+        return transactionList;
+    }
+
+    public static void writeToSharedPreferences(Context appContext, List<Transaction> transactionList){
+        List<Transaction> transactions = sortByTransactions(transactionList, new SortByStruct(st_timestamp, true));
+
         SharedPreferences settings = appContext.getSharedPreferences("Transactions", 0);
         SharedPreferences.Editor editor = settings.edit();
 
@@ -276,6 +411,61 @@ public class Transaction {
                     settings.getBoolean("t"+i + "_movement", Transaction.t_owes)));
         }
 
-        return transactions;
+        return sortByTransactions(transactions, new SortByStruct(st_timestamp, true));
+    }
+
+    public static class SortByStruct {
+        public int sortType;
+        public boolean lowestToHighest;
+        public Member member;
+
+        public SortByStruct(){
+            this.sortType = st_timestamp;
+            this.lowestToHighest = true;
+            this.member = Member.dummy;
+        }
+
+        public SortByStruct(int sortType, boolean lowestToHighest){
+            this.sortType = sortType;
+            this.lowestToHighest = lowestToHighest;
+            this.member = Member.dummy;
+        }
+
+        public SortByStruct(int sortType, Member member){
+            this.sortType = sortType;
+            this.lowestToHighest = true;
+            this.member = member;
+        }
+
+        public static void writeToSharedPreferences(Context appContext, SortByStruct sortByStruct){
+            SharedPreferences settings = appContext.getSharedPreferences("Settings", 0);
+            SharedPreferences.Editor editor = settings.edit();
+
+            int sortType = sortByStruct.sortType;
+
+            editor.putInt("sortBy_sortType", sortType);
+
+            if((sortType == Transaction.st_timestamp) || (sortType == Transaction.st_amount) || (sortType == Transaction.st_movement))
+                editor.putBoolean("sortBy_lowestToHighest", sortByStruct.lowestToHighest);
+            else
+                editor.putString("sortBy_memberName", sortByStruct.member.getName());
+
+            editor.apply();
+        }
+
+        public static SortByStruct readFromSharedPreferences(Context appContext){
+            SharedPreferences settings = appContext.getSharedPreferences("Settings", 0);
+
+            SortByStruct sortByStruct = new SortByStruct();
+            sortByStruct.sortType = settings.getInt("sortBy_sortType", Transaction.st_timestamp);
+
+            if((sortByStruct.sortType == Transaction.st_timestamp) || (sortByStruct.sortType == Transaction.st_amount) || (sortByStruct.sortType == Transaction.st_movement))
+                sortByStruct.lowestToHighest = settings.getBoolean("sortBy_lowestToHighest", true);
+            else
+                sortByStruct.member = Member.getFromSharedPreferences(appContext, settings.getString("sortBy_memberName", ""));
+
+            return sortByStruct;
+
+        }
     }
 }
