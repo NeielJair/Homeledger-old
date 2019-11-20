@@ -182,7 +182,7 @@ public class MembersFragment extends Fragment {
         @SuppressLint("ClickableViewAccessibility") //TODO ClickableViewAccessibility
         @Override
         public void onBindViewHolder(@NonNull ViewHolder holder, final int position) {
-            //Toast.makeText(getActivity(), "onBindViewHolder: called", Toast.LENGTH_SHORT).show();
+            //Toast.makeText(getActivity(), "onBindViewHolder: called", Toast.LENGTH_SHORT).slideUp();
             //members.get(position).adaptView((TransactionLayout) holder.view);
 
             final Member member = members.get(position);

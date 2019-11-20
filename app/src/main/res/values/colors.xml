@@ -6,4 +6,6 @@
     <color name="colorGray">#696969</color>
     <color name="holo_blue_light">#ff33b5e5</color>
     <color name="holo_blue_bright">#ff00ddff</color>
+    <color name="colorSelected">#80deea</color>
+    <color name="colorRedDisabled">#ac9b9b</color>
 </resources>

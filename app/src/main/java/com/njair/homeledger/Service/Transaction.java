@@ -3,7 +3,6 @@ package com.njair.homeledger.Service;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Color;
-import android.util.Log;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -22,6 +21,7 @@ public class Transaction {
     public static final int st_amount = 2;
     public static final int st_movement = 3;
 
+    protected int Id;
     public String description;
     public Member debtor;
     public float amount;
@@ -30,6 +30,8 @@ public class Transaction {
     public boolean movement;
 
     public static final String timeStampFormat = "dd/MM/yyyy, HH:mm";
+    public static final String dateFormat = "dd/MM/yyyy";
+    public static final String timeFormat = "HH:mm";
 
     public Transaction(Member debtor, Member lender, float amount){
         this.description = "";
@@ -38,6 +40,8 @@ public class Transaction {
         this.amount = amount;
         this.timestamp = new SimpleDateFormat(timeStampFormat, Locale.getDefault()).format(new Date());
         this.movement = t_owes;
+
+        this.Id = -1;
 
         order();
 
@@ -53,6 +57,8 @@ public class Transaction {
         this.timestamp = new SimpleDateFormat(timeStampFormat, Locale.getDefault()).format(new Date());
         this.movement = t_owes;
 
+        this.Id = -1;
+
         order();
 
         debtor.addFunds(-amount);
@@ -66,6 +72,8 @@ public class Transaction {
         this.amount = amount;
         this.timestamp = new SimpleDateFormat(timeStampFormat, Locale.getDefault()).format(new Date());
         this.movement = movement;
+
+        this.Id = -1;
 
         order();
 
@@ -81,6 +89,8 @@ public class Transaction {
         this.timestamp = timestamp;
         this.movement = t_owes;
 
+        this.Id = -1;
+
         order();
 
         debtor.addFunds(-amount);
@@ -94,6 +104,8 @@ public class Transaction {
         this.amount = amount;
         this.timestamp = timestamp;
         this.movement = movement;
+
+        this.Id = -1;
 
         order();
 
@@ -155,6 +167,10 @@ public class Transaction {
 
     public boolean sharesParties(Transaction t){
         return (((debtor.equals(t.debtor)) && (lender.equals(t.lender))) || ((lender.equals(t.debtor)) && (debtor.equals(t.lender))));
+    }
+
+    public boolean equals(Transaction t){
+        return (((debtor.equals(t.debtor)) && (lender.equals(t.lender))) && (timestamp.equals(t.timestamp)) && (movement == t.movement) && (amount == t.amount));
     }
 
     public static Transaction combine(Transaction t, Transaction _t){
@@ -367,8 +383,27 @@ public class Transaction {
         return transactionList;
     }
 
+    public static int getPosition(List<Transaction> tList, Transaction t){
+        for(int i = 0; i < tList.size(); i++){
+            if(t.equals(tList.get(i)))
+                return i;
+        }
+
+        return -1;
+    }
+
+    public static int getPositionByTimestamp(List<Transaction> tList, String timestamp){
+        for(int i = 0; i < tList.size(); i++){
+            if(tList.get(i).timestamp.equals(timestamp))
+                return i;
+        }
+
+        return -1;
+    }
+
     public static void writeToSharedPreferences(Context appContext, List<Transaction> transactionList){
-        List<Transaction> transactions = sortByTransactions(transactionList, new SortByStruct(st_timestamp, true));
+        List<Transaction> transactions = transactionList;
+        sortByTransactions(transactions, new SortByStruct(st_timestamp, true));
 
         SharedPreferences settings = appContext.getSharedPreferences("Transactions", 0);
         SharedPreferences.Editor editor = settings.edit();
@@ -411,13 +446,16 @@ public class Transaction {
                     settings.getBoolean("t"+i + "_movement", Transaction.t_owes)));
         }
 
-        return sortByTransactions(transactions, new SortByStruct(st_timestamp, true));
+        sortByTransactions(transactions, new SortByStruct(st_timestamp, true));
+        return transactions;
     }
 
     public static class SortByStruct {
         public int sortType;
         public boolean lowestToHighest;
         public Member member;
+
+        public static SortByStruct base = new SortByStruct();
 
         public SortByStruct(){
             this.sortType = st_timestamp;
@@ -466,6 +504,289 @@ public class Transaction {
 
             return sortByStruct;
 
+        }
+    }
+
+    public static class TransactionList {
+        private List<Transaction> data;
+        protected List<Transaction> list;
+        protected SortByStruct sortByStruct;
+
+        public TransactionList(){
+            data = new ArrayList<>();
+            list = new ArrayList<>();
+            sortByStruct = SortByStruct.base;
+        }
+
+        public TransactionList(List<Transaction> transactionList){
+            this.data = new ArrayList<>(transactionList);
+            this.list = new ArrayList<>();
+            this.sortByStruct = SortByStruct.base;
+
+            reset();
+        }
+
+        public TransactionList(List<Transaction> transactionList, SortByStruct sbs){
+            this.data = new ArrayList<>(transactionList);
+            this.list = new ArrayList<>();
+            this.sortByStruct = sbs;
+
+            reset();
+        }
+
+        public TransactionList(SortByStruct sbs){
+            data = new ArrayList<>();
+            list = new ArrayList<>();
+            sortByStruct = sbs;
+        }
+
+        public void sort(){
+            list = new ArrayList<>(data);
+
+            int sortType = sortByStruct.sortType;
+            boolean lowestToHighest = sortByStruct.lowestToHighest;
+            Member member = sortByStruct.member;
+
+            if(sortType != st_timestamp)
+                Transaction.sortByTransactions(list, new SortByStruct(st_timestamp, true));
+
+            int size = list.size();
+
+            Transaction t;
+
+            switch(sortType){
+                case st_timestamp:
+                    SimpleDateFormat formatter = new SimpleDateFormat(timeStampFormat, Locale.getDefault());
+
+                    for(int i = 0; i < size; i++){
+                        t = list.get(i);
+                        Date curTimestamp;
+                        Date tempTimestamp;
+                        int j = i - 1;
+
+                        try{
+                            curTimestamp = formatter.parse(t.timestamp);
+
+                            while(j >= 0){
+                                tempTimestamp = formatter.parse(list.get(j).timestamp);
+
+                                if((lowestToHighest) ? (curTimestamp.before(tempTimestamp)) : (curTimestamp.after(tempTimestamp)))
+                                    break;
+
+                                list.set(j + 1, list.get(j));
+                                j--;
+                            }
+
+                            list.set(j + 1, t);
+                        } catch (ParseException e) {
+                            e.printStackTrace();
+                        }
+                    }
+
+                    break;
+
+                case st_member:
+                    Transaction _t;
+                    Member curMember;
+                    Member tempMember;
+                    int slots = 0;
+
+                    for(int i = 0; i < size; i++){
+                        t = list.get(i);
+                        curMember = t.debtor;
+
+                        int j = i - 1;
+
+                        while(j >= 0 && curMember.equals(member)){
+                            _t = list.get(j);
+                            tempMember = _t.debtor;
+
+                            if(curMember.equals(tempMember))
+                                break;
+
+                            list.set(j + 1, _t);
+                            j--;
+                        }
+
+                        if(curMember.equals(member))
+                            slots++;
+                        list.set(j + 1, t);
+                    }
+
+                    for(int i = slots; i < size; i++){
+                        t = list.get(i);
+                        curMember = t.lender;
+
+                        int j = i - 1;
+
+                        while(j >= slots && curMember.equals(member)){
+                            _t = list.get(j);
+                            tempMember = _t.lender;
+
+                            if(curMember.equals(tempMember))
+                                break;
+
+                            list.set(j + 1, _t);
+                            j--;
+                        }
+
+                        list.set(j + 1, t);
+                    }
+
+                    break;
+
+                case st_amount:
+                    for(int i = 0; i < size; i++){
+                        t = list.get(i);
+                        float curAmount= t.amount;
+                        float tempAmount;
+                        int j = i - 1;
+
+                        while(j >= 0){
+                            tempAmount = list.get(j).amount;
+
+                            if(!((lowestToHighest) ? (curAmount <= tempAmount) : (curAmount >= tempAmount)))
+                                break;
+
+                            list.set(j + 1, list.get(j));
+                            j--;
+                        }
+
+                        list.set(j + 1, t);
+                    }
+
+                    break;
+
+                case st_movement:
+                    for(int i = 0; i < size; i++){
+                        t = list.get(i);
+                        int j = i - 1;
+
+                        while(j >= 0){
+                            if(!((lowestToHighest) ? (t.movement == t_owes) : (t.movement == t_pays)))
+                                break;
+
+                            list.set(j + 1, list.get(j));
+                            j--;
+                        }
+
+                        list.set(j + 1, t);
+                    }
+
+                    break;
+            }
+        }
+
+        public void sort(SortByStruct sbs){
+            sortByStruct = sbs;
+
+            sort();
+        }
+
+        public void set(List<Transaction> newData){
+            data = new ArrayList<>(newData);
+
+            for(int i = 0; i < data.size(); i++)
+                data.get(i).Id = i;
+
+            reset();
+        }
+
+        public void add(Transaction t){
+            data.add(t);
+            reset();
+        }
+
+        public void addNonDuplicate(Transaction t){
+            if(!contains(t)) {
+                add(t);
+                reset();
+            }
+        }
+
+        public void resetId() {
+            for(int i = 0; i < data.size(); i++){
+                data.get(i).Id = i;
+            }
+        }
+
+        public void reset() {
+            resetId();
+            sort();
+        }
+
+        public int getId(Transaction t){
+            for(int i = 0; i < data.size(); i++){
+                Transaction _t = data.get(i);
+
+                if(_t.Id == t.Id)
+                    return _t.Id;
+                else if(data.get(i).equals(t)) {
+                    _t.Id = i;
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
+        public int getPosition(Transaction t){
+            for(int i = 0; i < list.size(); i++){
+                if(list.get(i).equals(t))
+                    return i;
+            }
+
+            return -1;
+        }
+
+        public boolean contains(Transaction t){
+            return (getId(t) != -1);
+        }
+
+        public void remove(Transaction t){
+            int i = getId(t);
+
+            if(i != -1) {
+                data.remove(i);
+                reset();
+            }
+        }
+
+        public void removeBy(int Id){
+            data.remove(Id);
+            reset();
+        }
+
+        public void removeAt(int position){
+            remove(list.get(position));
+        }
+
+        public List<Transaction> getData() {
+            return data;
+        }
+
+        public List<Transaction> getList() {
+            return list;
+        }
+
+        public SortByStruct getSortByStruct() {
+            return sortByStruct;
+        }
+
+        public static TransactionList readFromSharedPreferences(Context appContext){
+            return new TransactionList(Transaction.readFromSharedPreferences(appContext),
+                    SortByStruct.readFromSharedPreferences(appContext));
+        }
+
+        public static void writeToSharedPreferences(Context appContext, TransactionList tl){
+            Transaction.writeToSharedPreferences(appContext, tl.getData());
+            SortByStruct.writeToSharedPreferences(appContext, tl.getSortByStruct());
+
+            tl.reset();
+        }
+
+        public void upload(Context appContext) {
+            TransactionList.writeToSharedPreferences(appContext, this);
         }
     }
 }

@@ -3,6 +3,8 @@ package com.njair.homeledger.ui.transactions;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.DatePickerDialog;
+import android.app.TimePickerDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.res.Resources;
@@ -28,13 +30,15 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CompoundButton;
+import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.RadioGroup;
 import android.widget.Spinner;
 import android.widget.Switch;
-import android.widget.TableRow;
 import android.widget.TextView;
+import android.widget.TimePicker;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.NonNull;
@@ -53,16 +57,21 @@ import com.google.android.material.snackbar.Snackbar;
 import com.njair.homeledger.R;
 import com.njair.homeledger.Service.Member;
 import com.njair.homeledger.Service.Transaction;
+import com.njair.homeledger.Service.Transaction.TransactionList;
 import com.njair.homeledger.Service.Transaction.SortByStruct;
+import com.njair.homeledger.ui.DialogDrawerView;
 
-import java.util.ArrayList;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.List;
+import java.util.Locale;
 
 public class TransactionsFragment extends Fragment {
 
     private TransactionsViewModel transactionsViewModel;
-    private List<Transaction> transactionList = new ArrayList<>();
+
+    private TransactionList transactionList = new TransactionList();
 
     private FloatingActionButton fabWrite;
     private TransactionsAdapter transactionsAdapter;
@@ -86,13 +95,10 @@ public class TransactionsFragment extends Fragment {
         final Context context = requireContext();
         r = getResources();
 
-        transactionList = Transaction.readFromSharedPreferences(activity);
-        SortByStruct sortByStruct = SortByStruct.readFromSharedPreferences(activity);
-
-        Transaction.sortByTransactions(transactionList, sortByStruct);
+        transactionList = TransactionList.readFromSharedPreferences(activity);
 
         RecyclerView transactionsRecyclerView = root.findViewById(R.id.recyclerview_transactions);
-        transactionsAdapter = new TransactionsAdapter(activity, transactionList, SortByStruct.readFromSharedPreferences(activity));
+        transactionsAdapter = new TransactionsAdapter(activity, transactionList);
         transactionsRecyclerView.setAdapter(transactionsAdapter);
         transactionsRecyclerView.setLayoutManager(new LinearLayoutManager(activity, LinearLayoutManager.VERTICAL, false));
         transactionsRecyclerView.addItemDecoration(new DividerItemDecoration(context, DividerItemDecoration.VERTICAL));
@@ -100,98 +106,193 @@ public class TransactionsFragment extends Fragment {
 
         setHasOptionsMenu(true);
 
+        //region [Manage dialog drawer: add transaction]
+        final DialogDrawerView dialogDrawer = root.findViewById(R.id.bottomDrawerTransaction);
+        dialogDrawer.setTitle("Add transaction");
+
+        final ConstraintLayout dialogLayout = root.findViewById(R.id.linearLayout);
+
+        final List<Member> memberList = Member.readFromSharedPreferences(activity);
+
+        final LinearLayout buttonDatePicker = dialogLayout.findViewById(R.id.buttonDatePicker);
+        final TextView textViewDate = dialogLayout.findViewById(R.id.textViewDate);
+        final LinearLayout buttonTimePicker = dialogLayout.findViewById(R.id.buttonTimePicker);
+        final TextView textViewTime = dialogLayout.findViewById(R.id.textViewTime);
+        final EditText editTextDescription = dialogLayout.findViewById(R.id.editTextDescription);
+        final Spinner spinnerSender = dialogLayout.findViewById(R.id.spinnerSender);
+        final EditText editTextAmount = dialogLayout.findViewById(R.id.editTextAmount);
+        final Spinner spinnerMovement = dialogLayout.findViewById(R.id.spinnerMovement);
+        final Spinner spinnerRecipient = dialogLayout.findViewById(R.id.spinnerRecipient);
+
+        final ImageView imageViewDismiss = dialogDrawer.findViewById(R.id.imageViewDismiss);
+        final Button buttonCancel = dialogDrawer.findViewById(R.id.buttonCancel);
+        final Button buttonAdd = dialogDrawer.findViewById(R.id.buttonOk);
+
+        final ArrayAdapter<String> aASender = new ArrayAdapter<>(activity, android.R.layout.simple_spinner_dropdown_item,
+                addToBeginningOfArray(Member.getNameList(memberList).toArray(new String[0]), "Debtor"));
+        spinnerSender.setAdapter(aASender);
+
+        final ArrayAdapter<String> aARecipient = new ArrayAdapter<>(activity, android.R.layout.simple_spinner_dropdown_item,
+                addToBeginningOfArray(Member.getNameList(memberList).toArray(new String[0]), "Lender"));
+        spinnerRecipient.setAdapter(aARecipient);
+
+        final Calendar date = Calendar.getInstance();
+
+        final SimpleDateFormat sdfTimestamp = new SimpleDateFormat(Transaction.timeStampFormat, Locale.getDefault());
+        final SimpleDateFormat sdfDate = new SimpleDateFormat(Transaction.dateFormat, Locale.getDefault());
+        final SimpleDateFormat sdfTime = new SimpleDateFormat(Transaction.timeFormat, Locale.getDefault());
+
+        textViewDate.setText(sdfDate.format(date.getTime()));
+        textViewTime.setText(sdfTime.format(date.getTime()));
+
+        final DatePickerDialog.OnDateSetListener setDate = new DatePickerDialog.OnDateSetListener() {
+            @Override
+            public void onDateSet(DatePicker view, int year, int monthOfYear,
+                                  int dayOfMonth) {
+                // TODO Auto-generated method stub
+                date.set(Calendar.YEAR, year);
+                date.set(Calendar.MONTH, monthOfYear);
+                date.set(Calendar.DAY_OF_MONTH, dayOfMonth);
+
+                textViewDate.setText(sdfDate.format(date.getTime()));
+            }
+        };
+
+        buttonDatePicker.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View v) {
+                DatePickerDialog dialog = new DatePickerDialog(activity, setDate, date.get(Calendar.YEAR), date.get(Calendar.MONTH), date.get(Calendar.DAY_OF_MONTH));
+                dialog.show();
+            }
+        });
+
+        final TimePickerDialog.OnTimeSetListener setTime = new TimePickerDialog.OnTimeSetListener() {
+            @Override
+            public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
+                // TODO Auto-generated method stub
+                date.set(Calendar.HOUR_OF_DAY, hourOfDay);
+                date.set(Calendar.MINUTE, minute);
+
+                textViewTime.setText(sdfTime.format(date.getTime()));
+            }
+        };
+
+        buttonTimePicker.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View v) {
+                TimePickerDialog dialog = new TimePickerDialog(activity, setTime, date.get(Calendar.HOUR_OF_DAY), date.get(Calendar.MINUTE), true);
+                dialog.show();
+            }
+        });
+
+        buttonAdd.setEnabled(false);
+
+        spinnerSender.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
+                buttonAdd.setEnabled((position != 0) && (position != spinnerRecipient.getSelectedItemPosition())
+                        && !((editTextAmount.getText().toString().equals("")) || (Float.parseFloat(editTextAmount.getText().toString()) == 0)));
+
+                buttonAdd.setTextColor((buttonAdd.isEnabled()) ? (r.getColor(R.color.color4)) : (r.getColor(R.color.colorRedDisabled)));
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parentView) {}
+        });
+
+        editTextAmount.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                if(s.toString().trim().equals("."))
+                    s.insert(0, "0");
+
+                buttonAdd.setEnabled(!((s.toString().equals("")) || (Float.parseFloat(s.toString()) == 0)) && (spinnerSender.getSelectedItemPosition() != 0)
+                        && (spinnerRecipient.getSelectedItemPosition() != 0) && (spinnerSender.getSelectedItemPosition() != spinnerRecipient.getSelectedItemPosition()));
+
+                buttonAdd.setTextColor((buttonAdd.isEnabled()) ? (r.getColor(R.color.color4)) : (r.getColor(R.color.colorRedDisabled)));
+            }
+        });
+
+        spinnerRecipient.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
+                buttonAdd.setEnabled((position != 0) && (position != spinnerSender.getSelectedItemPosition())
+                        && !((editTextAmount.getText().toString().equals("")) || (Float.parseFloat(editTextAmount.getText().toString()) == 0)));
+
+                buttonAdd.setTextColor((buttonAdd.isEnabled()) ? (r.getColor(R.color.color4)) : (r.getColor(R.color.colorRedDisabled)));
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parentView) {}
+
+        });
+
+        imageViewDismiss.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                dialogDrawer.slideDown();
+
+                if(fabWrite.getVisibility() != View.VISIBLE)
+                    fabWrite.show();
+
+                resetTransactionDialog(dialogLayout);
+            }
+        });
+
+        buttonCancel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                dialogDrawer.slideDown();
+
+                if(fabWrite.getVisibility() != View.VISIBLE)
+                    fabWrite.show();
+
+                resetTransactionDialog(dialogLayout);
+            }
+        });
+
+        buttonAdd.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                dialogDrawer.slideDown();
+
+                if(fabWrite.getVisibility() != View.VISIBLE)
+                    fabWrite.show();
+
+                transactionsAdapter.addItem(
+                        new Transaction(editTextDescription.getText().toString(),
+                                Member.findMember(memberList, spinnerSender.getSelectedItem().toString()),
+                                Member.findMember(memberList, spinnerRecipient.getSelectedItem().toString()),
+                                Float.parseFloat(editTextAmount.getText().toString()),
+                                sdfTimestamp.format(date.getTime()),
+                                spinnerMovement.getSelectedItem().equals("Owes"))
+                );
+
+                resetTransactionDialog(dialogLayout);
+            }
+        });
+
+
+
+        //endregion
+
         //region [Handle FAB: add transaction]
         fabWrite = root.findViewById(R.id.fabWrite);
         fabWrite.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                final List<Member> memberList = Member.readFromSharedPreferences(activity);
+                if(!dialogDrawer.visible){
+                    dialogDrawer.slideUp();
 
-                AlertDialog.Builder builder = new AlertDialog.Builder(activity);
-                LayoutInflater inflater = requireActivity().getLayoutInflater();
-                View dialogLayout = inflater.inflate(R.layout.dialog_create_transaction, null);
-
-                builder.setTitle("Add transaction");
-                builder.setView(dialogLayout);
-
-                final EditText editTextDescription = dialogLayout.findViewById(R.id.editTextDescription);
-                final Spinner spinnerSender = dialogLayout.findViewById(R.id.spinnerSender);
-                final EditText editTextAmount = dialogLayout.findViewById(R.id.editTextAmount);
-                final Spinner spinnerMovement = dialogLayout.findViewById(R.id.spinnerMovement);
-                final Spinner spinnerRecipient = dialogLayout.findViewById(R.id.spinnerRecipient);
-
-                final ArrayAdapter<String> aASender = new ArrayAdapter<>(activity, android.R.layout.simple_spinner_dropdown_item,
-                        addToBeginningOfArray(Member.getNameList(memberList).toArray(new String[0]), "Choose the debtor"));
-                spinnerSender.setAdapter(aASender);
-
-                final ArrayAdapter<String> aARecipient = new ArrayAdapter<>(activity, android.R.layout.simple_spinner_dropdown_item,
-                        addToBeginningOfArray(Member.getNameList(memberList).toArray(new String[0]), "Choose the lender"));
-                spinnerRecipient.setAdapter(aARecipient);
-
-                builder.setPositiveButton("Add", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int id) {
-                        transactionsAdapter.addItem(
-                                new Transaction(editTextDescription.getText().toString(),
-                                        Member.findMember(memberList, spinnerSender.getSelectedItem().toString()),
-                                        Member.findMember(memberList, spinnerRecipient.getSelectedItem().toString()),
-                                        Float.parseFloat(editTextAmount.getText().toString()),
-                                        spinnerMovement.getSelectedItem().equals("Owes"))
-                        );
-                    }
-                })
-                        .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int id) {
-                            }
-                        });
-
-                AlertDialog dialog = builder.create();
-                dialog.show();
-
-                final Button dialogBtnPositive = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
-                dialogBtnPositive.setEnabled(false);
-
-                spinnerSender.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-                    @Override
-                    public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
-                        dialogBtnPositive.setEnabled((position != 0) && (position != spinnerRecipient.getSelectedItemPosition())
-                                && !((editTextAmount.getText().toString().equals("")) || (Float.parseFloat(editTextAmount.getText().toString()) == 0)));
-                    }
-
-                    @Override
-                    public void onNothingSelected(AdapterView<?> parentView) {
-                    }
-
-                });
-
-                editTextAmount.addTextChangedListener(new TextWatcher() {
-                    @Override
-                    public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-                    }
-
-                    @Override
-                    public void onTextChanged(CharSequence s, int start, int before, int count) {
-                    }
-
-                    @Override
-                    public void afterTextChanged(Editable s) {
-                        dialogBtnPositive.setEnabled(!((s.toString().equals("")) || (Float.parseFloat(s.toString()) == 0)) && (spinnerSender.getSelectedItemPosition() != 0)
-                                && (spinnerRecipient.getSelectedItemPosition() != 0) && (spinnerSender.getSelectedItemPosition() != spinnerRecipient.getSelectedItemPosition()));
-                    }
-                });
-
-                spinnerRecipient.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-                    @Override
-                    public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
-                        dialogBtnPositive.setEnabled((position != 0) && (position != spinnerSender.getSelectedItemPosition())
-                                && !((editTextAmount.getText().toString().equals("")) || (Float.parseFloat(editTextAmount.getText().toString()) == 0)));
-                    }
-
-                    @Override
-                    public void onNothingSelected(AdapterView<?> parentView) {
-                    }
-
-                });
+                    if(fabWrite.getVisibility() == View.VISIBLE)
+                        fabWrite.hide();
+                }
             }
         });
 
@@ -199,9 +300,9 @@ public class TransactionsFragment extends Fragment {
             @Override
             public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
                 super.onScrolled(recyclerView, dx, dy);
-                if (dy > 0 && fabWrite.getVisibility() == View.VISIBLE) {
+                if (dy > 0 && fabWrite.getVisibility() == View.VISIBLE && dialogDrawer.visible) {
                     fabWrite.hide();
-                } else if (dy < 0 && fabWrite.getVisibility() != View.VISIBLE) {
+                } else if ((dy < 0 || dy == 0) && fabWrite.getVisibility() != View.VISIBLE && !dialogDrawer.visible) {
                     fabWrite.show();
                 }
             }
@@ -419,7 +520,7 @@ public class TransactionsFragment extends Fragment {
         return super.onOptionsItemSelected(item);
     }
 
-    static <T> T[] addToBeginningOfArray(T[] array, T element) {
+    private static <T> T[] addToBeginningOfArray(T[] array, T element) {
         T[] newArray = Arrays.copyOf(array, array.length + 1);
         newArray[0] = element;
         System.arraycopy(array, 0, newArray, 1, array.length);
@@ -427,17 +528,43 @@ public class TransactionsFragment extends Fragment {
         return newArray;
     }
 
+    private void resetTransactionDialog(ConstraintLayout dialogLayout){
+        final TextView textViewDate = dialogLayout.findViewById(R.id.textViewDate);
+        final TextView textViewTime = dialogLayout.findViewById(R.id.textViewTime);
+        final EditText editTextDescription = dialogLayout.findViewById(R.id.editTextDescription);
+        final Spinner spinnerSender = dialogLayout.findViewById(R.id.spinnerSender);
+        final EditText editTextAmount = dialogLayout.findViewById(R.id.editTextAmount);
+        final Spinner spinnerMovement = dialogLayout.findViewById(R.id.spinnerMovement);
+        final Spinner spinnerRecipient = dialogLayout.findViewById(R.id.spinnerRecipient);
+
+        final Calendar date = Calendar.getInstance();
+
+        final SimpleDateFormat sdfDate = new SimpleDateFormat(Transaction.dateFormat, Locale.getDefault());
+        final SimpleDateFormat sdfTime = new SimpleDateFormat(Transaction.timeFormat, Locale.getDefault());
+
+        textViewDate.setText(sdfDate.format(date.getTime()));
+        textViewTime.setText(sdfTime.format(date.getTime()));
+
+        editTextDescription.setText("");
+        editTextAmount.setText("");
+
+        spinnerSender.setSelection(0);
+        spinnerRecipient.setSelection(0);
+        spinnerMovement.setSelection(0);
+    }
+
     class TransactionsAdapter extends RecyclerView.Adapter<TransactionsAdapter.ViewHolder> {
         private Activity activity;
         private Context context;
 
-        private List<Transaction> transactions;
+        private TransactionList transactions;
         private SortByStruct sortByStruct;
 
-        private TransactionsAdapter(Activity activity, List<Transaction> transactions, SortByStruct sortByStruct) {
+        private TransactionsAdapter(Activity activity, TransactionList transactions) {
             this.activity = activity;
-            this.transactions = Transaction.sortByTransactions(transactions, sortByStruct);
-            this.sortByStruct = sortByStruct;
+            this.transactions = transactions;
+            //Transaction.sortByTransactions(this.transactions, sortByStruct);
+            //this.sortByStruct = sortByStruct;
         }
 
         @NonNull
@@ -451,51 +578,12 @@ public class TransactionsFragment extends Fragment {
         @SuppressLint("ClickableViewAccessibility") //TODO ClickableViewAccessibility
         @Override
         public void onBindViewHolder(@NonNull final ViewHolder holder, final int position) {
-            //Toast.makeText(activity, "onBindViewHolder: called", Toast.LENGTH_SHORT).show();
+            //Toast.makeText(activity, "onBindViewHolder: called", Toast.LENGTH_SHORT).slideUp();
             //transactions.get(position).adaptView((TransactionLayout) holder.view);
 
-            final Transaction transaction = transactions.get(position);
+            final Transaction transaction = transactions.getList().get(position);
 
             holder.textViewTimestamp.setText(transaction.timestamp);
-
-            //region [Handle imageViewDelete: delete transaction]
-            /*final ImageView IVDelete = holder.imageViewDelete;
-            IVDelete.setColorFilter(Color.BLACK);
-            IVDelete.setOnTouchListener(new View.OnTouchListener() {
-                @Override
-                public boolean onTouch(View v, MotionEvent event) {
-                    switch (event.getAction()) {
-                        case MotionEvent.ACTION_DOWN: {
-                            IVDelete.setColorFilter(R.color.common_google_signin_btn_text_dark_pressed);
-                            IVDelete.invalidate();
-
-                            AlertDialog.Builder builder = new AlertDialog.Builder(activity);
-                            builder.setMessage((r.getString(R.string.deletetransaction) + " " + transaction.description).trim() + " " + r.getString(R.string.atDate) + " " + transaction.timestamp + "?")
-                                    .setPositiveButton(r.getString(R.string.yes), new DialogInterface.OnClickListener() {
-                                        public void onClick(DialogInterface dialog, int id) {
-                                            removeItem(position);
-
-                                            if (fabWrite.getVisibility() != View.GONE)
-                                                fabWrite.show();
-                                        }
-                                    })
-                                    .setNegativeButton(r.getString(R.string.no), new DialogInterface.OnClickListener() {
-                                        public void onClick(DialogInterface dialog, int id) {
-                                        }
-                                    }).show();
-                            break;
-                        }
-                        case MotionEvent.ACTION_UP:
-                        case MotionEvent.ACTION_CANCEL: {
-                            IVDelete.setColorFilter(Color.BLACK);
-                            IVDelete.invalidate();
-                            break;
-                        }
-                    }
-                    return false;
-                }
-            });*/
-            //endregion
 
             //region [Handle transactionConstraintLayout: display description]
             holder.transactionConstraintLayout.setOnTouchListener(new View.OnTouchListener() {
@@ -546,35 +634,46 @@ public class TransactionsFragment extends Fragment {
 
         @Override
         public int getItemCount() {
-            return transactions.size();
+            return transactions.getData().size();
         }
 
         public void addItem(Transaction transaction) {
             transactions.add(transaction);
-            Transaction.writeToSharedPreferences(activity, transactions);
+            transactions.upload(activity);
             notifyDataSetChanged();
         }
 
         public void removeItem(int position) {
-            transactions.remove(position);
-            Transaction.writeToSharedPreferences(activity, transactions);
-            notifyDataSetChanged();
+            transactions.removeAt(position);
+            transactions.upload(activity);
+            notifyItemRemoved(position);
         }
 
         public void restoreItem(Transaction item, int position) {
-            transactions.add(position, item);
+            /*transactions.add(position, item);
+            Transaction.sortByTransactions(transactions, sortByStruct);
+            int i = Transaction.getId(transactions, item);
+
             Transaction.writeToSharedPreferences(activity, transactions);
-            notifyItemInserted(position);
+            notifyItemInserted(position);*/
+
+            transactions.add(item);
+            transactions.upload(activity);
+            if(transactions.getPosition(item) != -1)
+                notifyItemInserted(transactions.getPosition(item));
+            else
+                notifyDataSetChanged();
         }
 
-        public void update(List<Transaction> transactions) {
+        public void update(TransactionList transactions) {
             this.transactions = transactions;
-            Transaction.writeToSharedPreferences(activity, transactions);
+            transactions.upload(activity);
             notifyDataSetChanged();
         }
 
         public void sort(SortByStruct sortByStruct) {
-            transactions = Transaction.sortByTransactions(transactions, sortByStruct);
+            this.sortByStruct = sortByStruct;
+            transactions.sort(sortByStruct);
             notifyDataSetChanged();
         }
 
@@ -654,7 +753,7 @@ public class TransactionsFragment extends Fragment {
             View itemView = viewHolder.itemView;
             int itemHeight = itemView.getHeight();
 
-            boolean isCancelled = dX == 0 && !isCurrentlyActive;
+            boolean isCancelled = (dX == 0) && !isCurrentlyActive;
 
             if (isCancelled) {
                 clearCanvas(c, itemView.getRight() + dX, (float) itemView.getTop(), (float) itemView.getRight(), (float) itemView.getBottom());
@@ -677,8 +776,6 @@ public class TransactionsFragment extends Fragment {
             deleteDrawable.draw(c);
 
             super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive);
-
-
         }
 
         private void clearCanvas(Canvas c, Float left, Float top, Float right, Float bottom) {
@@ -697,17 +794,15 @@ public class TransactionsFragment extends Fragment {
             @Override
             public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int i) {
                 final int position = viewHolder.getAdapterPosition();
-                final Transaction item = mAdapter.transactions.get(position);
+                final Transaction item = mAdapter.transactions.getList().get(position);
 
                 mAdapter.removeItem(position);
 
-
                 Snackbar snackbar = Snackbar
-                        .make(activity.findViewById(android.R.id.content), "Transaction removed from the list.", Snackbar.LENGTH_LONG);
-                snackbar.setAction("UNDO", new View.OnClickListener() {
+                        .make(activity.findViewById(android.R.id.content), r.getString(R.string.transactionremovedfromthelist), Snackbar.LENGTH_LONG);
+                snackbar.setAction(r.getString(R.string.undo), new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
-
                         mAdapter.restoreItem(item, position);
                         recyclerView.scrollToPosition(position);
                     }

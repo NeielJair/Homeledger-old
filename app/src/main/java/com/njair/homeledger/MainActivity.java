@@ -50,7 +50,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 /*Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();*/
+                        .setAction("Action", null).slideUp();*/
                 startActivity(new Intent(MainActivity.this, GroupMain.class));
             }
         });
@@ -77,7 +77,7 @@ public class MainActivity extends AppCompatActivity {
                                 // Log and toast
                                 String msg = getString(R.string.msg_token_fmt, token);
                                 Log.d(TAG, msg);
-                                Toast.makeText(MainActivity.this, msg, Toast.LENGTH_SHORT).show();
+                                Toast.makeText(MainActivity.this, msg, Toast.LENGTH_SHORT).slideUp();
                             }
                         });
                 // [END retrieve_current_token]
@@ -101,7 +101,7 @@ public class MainActivity extends AppCompatActivity {
                                     msg = getString(R.string.msg_subscribe_failed);
                                 }
                                 Log.d(TAG, msg);
-                                Toast.makeText(MainActivity.this, msg, Toast.LENGTH_SHORT).show();
+                                Toast.makeText(MainActivity.this, msg, Toast.LENGTH_SHORT).slideUp();
                             }
                         });
                 // [END subscribe_topics]

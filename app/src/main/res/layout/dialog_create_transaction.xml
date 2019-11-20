@@ -1,77 +1,150 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingTop="4dp"
+        android:paddingBottom="4dp"
+        android:focusable="true"
+        android:clickable="true"
+        android:orientation="horizontal" >
+
+        <LinearLayout
+            android:id="@+id/buttonDatePicker"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:background="@drawable/background_white_pressable"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/black_de"
+                android:textSize="16sp"
+                android:text="@string/date"
+                android:paddingEnd="4dp" />
+
+            <TextView
+                android:id="@+id/textViewDate"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ems="10"
+                android:text="dd/MM/yyyy"
+                android:paddingEnd="4dp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/buttonTimePicker"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:background="@drawable/background_white_pressable"
+            android:focusable="true"
+            android:clickable="true"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/black_de"
+                android:textSize="16sp"
+                android:text="@string/time"
+                android:paddingEnd="4dp" />
+
+            <TextView
+                android:id="@+id/textViewTime"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ems="10"
+                android:text="hh:mm"
+                android:paddingEnd="4dp" />
+        </LinearLayout>
+    </LinearLayout>
 
     <EditText
         android:id="@+id/editTextDescription"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingTop="16dp"
-        android:paddingBottom="16dp"
+        android:paddingTop="8dp"
         android:paddingStart="8dp"
         android:paddingEnd="8dp"
         android:ems="10"
-        android:hint="Description"
+        android:hint="@string/description"
         android:layout_gravity="center_vertical" />
 
-    <Spinner
-        android:id="@+id/spinnerSender"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingTop="16dp"
-        android:paddingBottom="16dp"
-        android:paddingStart="8dp"
-        android:paddingEnd="8dp"
-        android:entries="@array/choose_sender"
-        android:layout_gravity="center_vertical"
-        android:spinnerMode="dropdown"/>
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        android:orientation="horizontal">
+
+        <Spinner
+            android:id="@+id/spinnerSender"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:layout_weight="3"
+            android:entries="@array/choose_sender"
+            android:layout_gravity="center_vertical"
+            android:spinnerMode="dropdown"/>
+
+        <Spinner
+            android:id="@+id/spinnerMovement"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:layout_weight="5"
+            android:entries="@array/choose_movement"
+            android:layout_gravity="center_vertical"
+            android:spinnerMode="dropdown"/>
+    </LinearLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal">
 
+        <Spinner
+            android:id="@+id/spinnerRecipient"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:layout_weight="3"
+            android:entries="@array/choose_recipient"
+            android:layout_gravity="center_vertical"
+            android:spinnerMode="dropdown"/>
+
         <EditText
             android:id="@+id/editTextAmount"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:paddingTop="16dp"
-            android:paddingBottom="16dp"
             android:paddingStart="8dp"
             android:paddingEnd="8dp"
             android:ems="10"
             android:hint="Amount"
-            android:layout_weight="1"
+            android:layout_weight="5"
             android:layout_gravity="center_vertical"
             android:inputType="numberDecimal" />
-
-        <Spinner
-            android:id="@+id/spinnerMovement"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:paddingTop="16dp"
-            android:paddingBottom="16dp"
-            android:paddingStart="8dp"
-            android:paddingEnd="8dp"
-            android:layout_weight="0"
-            android:entries="@array/choose_movement"
-            android:layout_gravity="center_vertical"
-            android:spinnerMode="dropdown"/>
     </LinearLayout>
 
-    <Spinner
-        android:id="@+id/spinnerRecipient"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingTop="16dp"
-        android:paddingBottom="16dp"
-        android:paddingStart="8dp"
-        android:paddingEnd="8dp"
-        android:entries="@array/choose_recipient"
-        android:layout_gravity="center_vertical"
-        android:spinnerMode="dropdown"/>
+
 </LinearLayout>
 
     <!--android:background="@android:drawable/btn_dropdown"-->

@@ -78,7 +78,7 @@ public class SummaryFragment extends Fragment {
         @SuppressLint("ClickableViewAccessibility") //TODO ClickableViewAccessibility
         @Override
         public void onBindViewHolder(@NonNull final ViewHolder holder, final int position) {
-            //Toast.makeText(getActivity(), "onBindViewHolder: called", Toast.LENGTH_SHORT).show();
+            //Toast.makeText(getActivity(), "onBindViewHolder: called", Toast.LENGTH_SHORT).slideUp();
             //members.get(position).adaptView((TransactionLayout) holder.view);
 
             final Member debtor = members.get(position);
@@ -154,7 +154,7 @@ public class SummaryFragment extends Fragment {
             @SuppressLint("ClickableViewAccessibility") //TODO ClickableViewAccessibility
             @Override
             public void onBindViewHolder(@NonNull final ViewHolder holder, final int position) {
-                //Toast.makeText(getActivity(), "onBindViewHolder: called", Toast.LENGTH_SHORT).show();
+                //Toast.makeText(getActivity(), "onBindViewHolder: called", Toast.LENGTH_SHORT).slideUp();
 
                 final Transaction transaction = transactions.get(position);
 

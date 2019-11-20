@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string-array name="choose_sender">
-        <item>Choose the debtor</item>
+        <item>Debtor</item>
     </string-array>
 
     <string-array name="choose_recipient">
-        <item>Choose the lender</item>
+        <item>Lender</item>
     </string-array>
 
     <string-array name="choose_movement">
