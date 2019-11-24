@@ -6,6 +6,7 @@
     android:orientation="vertical">
 
     <LinearLayout
+        android:id="@+id/linearLayout_pickers"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:paddingTop="4dp"
@@ -78,6 +79,8 @@
         android:paddingTop="8dp"
         android:paddingStart="8dp"
         android:paddingEnd="8dp"
+        android:maxLength="50"
+        android:maxLines="1"
         android:ems="10"
         android:hint="@string/description"
         android:layout_gravity="center_vertical" />

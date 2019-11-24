@@ -19,6 +19,12 @@ public class Member {
     public Map<Member, Float> loanPortfolio = new HashMap<>();
     public static Member dummy = new Member("", Color.BLACK);
 
+    public Member(String name){
+        this.name = name;
+        this.color = Color.BLACK;
+        this.funds = 0;
+    }
+
     public Member(String name, int color){
         this.name = name;
         this.color = color;
@@ -60,7 +66,7 @@ public class Member {
                 return member;
         }
 
-        return dummy;
+        return new Member(name);
     }
 
     public static List<String> getNameList(List<Member> members){

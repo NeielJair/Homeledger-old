@@ -9,14 +9,29 @@
     android:clickable="true"
     android:focusable="true">
 
+    <ImageView
+        android:id="@+id/imageViewLeftSwipeCircle"
+        android:layout_width="wrap_content"
+        android:layout_height="64dp"
+        android:scaleType="fitXY"
+        android:tint="@color/design_default_color_primary"
+        android:alpha=".1"
+        android:paddingEnd="12dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/ic_circle_white_24dp" />
+
     <TextView
         android:id="@+id/textViewTimestamp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_row="0"
         android:layout_column="0"
+        android:paddingStart="2dp"
         android:paddingEnd="64dp"
-        android:text="Timestamp"
+        android:text="dd/MM/yyyy, hh:mm"
         android:textSize="12dp"
         android:clickable="false"
         android:focusable="false"
@@ -150,12 +165,12 @@
         tools:layout_editor_absoluteX="259dp" />
 
     <ImageView
-        android:id="@+id/imageView"
+        android:id="@+id/imageViewRightSwipeCircle"
         android:layout_width="wrap_content"
         android:layout_height="64dp"
         android:scaleType="fitXY"
         android:tint="#b80f0a"
-        android:alpha=".15"
+        android:alpha=".1"
         android:paddingStart="12dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"

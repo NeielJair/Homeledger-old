@@ -30,4 +30,8 @@
     <string name="description">Description</string>
     <string name="date">Date</string>
     <string name="time">Time</string>
+    <string name="debtor">Debtor</string>
+    <string name="lender">Lender</string>
+    <string name="addtransaction">Add transaction</string>
+    <string name="edittransaction">Edit transaction</string>
 </resources>

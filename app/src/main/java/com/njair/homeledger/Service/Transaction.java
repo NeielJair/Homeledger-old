@@ -122,6 +122,10 @@ public class Transaction {
         return Currency.getInstance(Locale.getDefault()).getSymbol() + amount;
     }
 
+    public String getDescription(){
+        return (description == null) ? "" : description;
+    }
+
     public void addAmount(float cash){
         debtor.addFunds(-cash);
         lender.addFunds(cash);
@@ -697,6 +701,14 @@ public class Transaction {
             reset();
         }
 
+        public void replace(int position, Transaction t){
+            if(position >= data.size() || position < 0)
+                return;
+
+            data.set(position, t);
+            reset();
+        }
+
         public void addNonDuplicate(Transaction t){
             if(!contains(t)) {
                 add(t);
@@ -728,6 +740,10 @@ public class Transaction {
             }
 
             return -1;
+        }
+
+        public Transaction getAtPosition(int position){
+            return list.get(position);
         }
 
         public int getPosition(Transaction t){
