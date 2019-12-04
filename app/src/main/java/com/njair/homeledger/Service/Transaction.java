@@ -177,6 +177,10 @@ public class Transaction {
         return (((debtor.equals(t.debtor)) && (lender.equals(t.lender))) && (timestamp.equals(t.timestamp)) && (movement == t.movement) && (amount == t.amount));
     }
 
+    public Transaction copy(){
+        return new Transaction(description, debtor, lender, amount, timestamp, movement);
+    }
+
     public static Transaction combine(Transaction t, Transaction _t){
         Transaction res = t;
 

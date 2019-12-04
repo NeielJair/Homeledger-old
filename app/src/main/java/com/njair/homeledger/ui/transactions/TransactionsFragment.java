@@ -18,8 +18,10 @@ import android.graphics.Typeface;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.view.ContextMenu;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -65,6 +67,7 @@ import com.njair.homeledger.ui.DialogDrawerView;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
@@ -77,8 +80,9 @@ public class TransactionsFragment extends Fragment {
     private FloatingActionButton fabWrite;
     private TransactionsAdapter transactionsAdapter;
 
-    private boolean enableLeftSwipe;
-    private boolean enableRightSwipe;
+    private int valLeftSwipe;
+    private int valRightSwipe;
+    private boolean paymentSetCurDate;
 
     private Resources r;
 
@@ -102,18 +106,24 @@ public class TransactionsFragment extends Fragment {
         transactionList = TransactionList.readFromSharedPreferences(activity);
 
         RecyclerView transactionsRecyclerView = root.findViewById(R.id.recyclerview_transactions);
-        transactionsAdapter = new TransactionsAdapter(activity, transactionList);
+        transactionsAdapter = new TransactionsAdapter(activity, transactionList, transactionsRecyclerView);
         transactionsRecyclerView.setAdapter(transactionsAdapter);
         transactionsRecyclerView.setLayoutManager(new LinearLayoutManager(activity, LinearLayoutManager.VERTICAL, false));
         transactionsRecyclerView.addItemDecoration(new DividerItemDecoration(context, DividerItemDecoration.VERTICAL));
 
         //Enable item swipe
-        SharedPreferences settings = activity.getSharedPreferences("Settings", 0);
-        enableLeftSwipe = settings.getBoolean("enableLeftSwipe", true);
-        enableRightSwipe = settings.getBoolean("enableRightSwipe", true);
+        SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(activity);
+        try {
+            valLeftSwipe = Integer.parseInt(settings.getString("pref_leftSwipe", "0"));
+            valRightSwipe = Integer.parseInt(settings.getString("pref_rightSwipe", "3"));
+        } catch(Exception e) {
+            valLeftSwipe = 0;
+            valRightSwipe = 3;
+        }
+        paymentSetCurDate = settings.getBoolean("pref_payment_currentDate", true);
 
         SwipeToDeleteCallback swipeToDeleteCallback = new SwipeToDeleteCallback(context, activity, transactionsAdapter,
-                transactionsRecyclerView, enableLeftSwipe, enableRightSwipe);
+                transactionsRecyclerView, valLeftSwipe, valRightSwipe);
         ItemTouchHelper itemTouchhelper = new ItemTouchHelper(swipeToDeleteCallback);
         itemTouchhelper.attachToRecyclerView(transactionsRecyclerView);
 
@@ -571,11 +581,12 @@ public class TransactionsFragment extends Fragment {
         private TransactionList transactions;
         private SortByStruct sortByStruct;
 
-        private TransactionsAdapter(Activity activity, TransactionList transactions) {
+        private RecyclerView recyclerView;
+
+        private TransactionsAdapter(Activity activity, TransactionList transactions, RecyclerView recyclerView) {
             this.activity = activity;
             this.transactions = transactions;
-            //Transaction.sortByTransactions(this.transactions, sortByStruct);
-            //this.sortByStruct = sortByStruct;
+            this.recyclerView = recyclerView;
         }
 
         @NonNull
@@ -594,8 +605,52 @@ public class TransactionsFragment extends Fragment {
 
             final Transaction transaction = transactions.getList().get(position);
 
-            holder.imageViewLeftSwipeCircle.setVisibility((enableLeftSwipe) ? View.VISIBLE : View.GONE);
-            holder.imageViewRightSwipeCircle.setVisibility((enableRightSwipe) ? View.VISIBLE : View.GONE);
+            holder.imageViewLeftSwipeCircle.setVisibility(((valLeftSwipe == -1) || (valLeftSwipe == 2 && transaction.movement == Transaction.t_pays)) ? View.GONE : View.VISIBLE);
+            holder.imageViewRightSwipeCircle.setVisibility(((valRightSwipe == -1) || (valRightSwipe == 2 && transaction.movement == Transaction.t_pays)) ? View.GONE : View.VISIBLE);
+
+            switch (valLeftSwipe){
+                case -1:
+                    holder.imageViewLeftSwipeCircle.setVisibility(View.GONE);
+                    break;
+
+                case 0:
+                    holder.imageViewLeftSwipeCircle.setColorFilter(R.color.colorEdit);
+                    break;
+
+                case 1:
+                    holder.imageViewLeftSwipeCircle.setColorFilter(R.color.colorDuplicate);
+                    break;
+
+                case 2:
+                    holder.imageViewLeftSwipeCircle.setColorFilter(R.color.colorPayment);
+                    break;
+
+                case 3:
+                    holder.imageViewLeftSwipeCircle.setColorFilter(R.color.colorDelete);
+                    break;
+            }
+
+            switch (valRightSwipe){
+                case -1:
+                    holder.imageViewRightSwipeCircle.setVisibility(View.GONE);
+                    break;
+
+                case 0:
+                    holder.imageViewRightSwipeCircle.setColorFilter(R.color.colorEdit);
+                    break;
+
+                case 1:
+                    holder.imageViewRightSwipeCircle.setColorFilter(R.color.colorDuplicate);
+                    break;
+
+                case 2:
+                    holder.imageViewRightSwipeCircle.setColorFilter(R.color.colorPayment);
+                    break;
+
+                case 3:
+                    holder.imageViewRightSwipeCircle.setColorFilter(R.color.colorDelete);
+                    break;
+            }
 
             holder.textViewTimestamp.setText(transaction.timestamp);
 
@@ -694,7 +749,7 @@ public class TransactionsFragment extends Fragment {
             notifyDataSetChanged();
         }
 
-        public class ViewHolder extends RecyclerView.ViewHolder {
+        public class ViewHolder extends RecyclerView.ViewHolder implements View.OnCreateContextMenuListener {
             ConstraintLayout transactionConstraintLayout;
 
             ImageView imageViewLeftSwipeCircle;
@@ -719,6 +774,7 @@ public class TransactionsFragment extends Fragment {
                 imageViewRightSwipeCircle = itemView.findViewById(R.id.imageViewRightSwipeCircle);
 
                 transactionConstraintLayout = itemView.findViewById(R.id.constraintlayout_transaction);
+                transactionConstraintLayout.setOnCreateContextMenuListener(this);
 
                 textViewTimestamp = itemView.findViewById(R.id.textViewTimestamp);
 
@@ -733,11 +789,47 @@ public class TransactionsFragment extends Fragment {
                 textViewRecipient = itemView.findViewById(R.id.textViewRecipient);
                 imageViewRecipientLine = itemView.findViewById(R.id.imageViewRecipientLine);
             }
+
+            @Override
+            public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
+                menu.add(Menu.NONE, 0, 0, "Modify").setOnMenuItemClickListener(onChange);
+                menu.add(Menu.NONE, 1, 1, "Duplicate").setOnMenuItemClickListener(onChange);
+
+                if(transactionsAdapter.transactions.getList().get(getAdapterPosition()).movement == Transaction.t_owes)
+                    menu.add(Menu.NONE, 2, 2, "Register payment").setOnMenuItemClickListener(onChange);
+
+                menu.add(Menu.NONE, 3, 3, "Delete").setOnMenuItemClickListener(onChange);
+            }
+
+            private final MenuItem.OnMenuItemClickListener onChange = new MenuItem.OnMenuItemClickListener() {
+                @Override
+                public boolean onMenuItemClick(MenuItem item) {
+                    Transaction t = transactionsAdapter.transactions.getList().get(getAdapterPosition());
+
+                    switch (item.getItemId()){
+                        case 0: //Edit
+                            editTransaction(activity, transactionsAdapter, getAdapterPosition());
+                            return true;
+
+                        case 1: //Duplicate
+                            duplicateTransaction(activity, transactionsAdapter, t);
+                            return true;
+
+                        case 2: //Register payment
+                            payTransaction(activity, transactionsAdapter, t);
+                            return true;
+
+                        case 3: //Delete
+                            deleteTransaction(activity, transactionsAdapter, getAdapterPosition());
+                            return true;
+                    }
+                    return false;
+                }
+            };
         }
     }
 
     class SwipeToDeleteCallback extends ItemTouchHelper.Callback {
-
         private Activity activity;
         private TransactionsAdapter mAdapter;
         private RecyclerView recyclerView;
@@ -747,19 +839,24 @@ public class TransactionsFragment extends Fragment {
         private ColorDrawable mBackground;
         private float prevdX;
 
-        private boolean deleteSwipe;
-        private int deleteBgColor;
-        private Drawable deleteDrawable;
-        private int deleteIntrinsicWidth;
-        private int deleteIntrinsicHeight;
+        private int leftSwipe;
+        private int rightSwipe;
+        private int intrinsicWidth;
+        private int intrinsicHeight;
 
-        private boolean editSwipe;
         private int editBgColor;
         private Drawable editDrawable;
-        private int editIntrinsicWidth;
-        private int editIntrinsicHeight;
 
-        SwipeToDeleteCallback(Context context, Activity activity, TransactionsAdapter adapter, RecyclerView recyclerView, boolean editSwipe, boolean deleteSwipe) {
+        private int duplicateBgColor;
+        private Drawable duplicateDrawable;
+
+        private int paymentBgColor;
+        private Drawable paymentDrawable;
+
+        private int deleteBgColor;
+        private Drawable deleteDrawable;
+
+        SwipeToDeleteCallback(Context context, Activity activity, TransactionsAdapter adapter, RecyclerView recyclerView, int leftSwipe, int rightSwipe) {
             this.activity = activity;
             mAdapter = adapter;
             this.recyclerView = recyclerView;
@@ -770,33 +867,34 @@ public class TransactionsFragment extends Fragment {
             mClearPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
             prevdX = 0;
 
-            deleteBgColor = Color.parseColor("#b80f0a");
-            deleteDrawable = ContextCompat.getDrawable(mContext, R.drawable.ic_delete_sweep_white_24dp);
-            deleteIntrinsicWidth = deleteDrawable.getIntrinsicWidth();
-            deleteIntrinsicHeight = deleteDrawable.getIntrinsicHeight();
-
-            editBgColor = R.color.design_default_color_primary;
+            editBgColor = ContextCompat.getColor(mContext, R.color.colorEdit);
             editDrawable = ContextCompat.getDrawable(mContext, R.drawable.ic_pencil_white_24dp);
-            editIntrinsicWidth = editDrawable.getIntrinsicWidth();
-            editIntrinsicHeight = editDrawable.getIntrinsicHeight();
 
-            this.deleteSwipe = deleteSwipe;
-            this.editSwipe = editSwipe;
+            duplicateBgColor = ContextCompat.getColor(mContext, R.color.colorDuplicate);
+            duplicateDrawable = ContextCompat.getDrawable(mContext, R.drawable.ic_duplicate_white_24dp);
+
+            paymentBgColor = ContextCompat.getColor(mContext, R.color.colorPayment);
+            paymentDrawable = ContextCompat.getDrawable(mContext, R.drawable.ic_payment_white_24dp);
+
+            deleteBgColor = ContextCompat.getColor(mContext, R.color.colorDelete);
+            deleteDrawable = ContextCompat.getDrawable(mContext, R.drawable.ic_trash_white_24dp);
+
+            this.leftSwipe = leftSwipe;
+            this.rightSwipe = rightSwipe;
+            intrinsicWidth = editDrawable.getIntrinsicWidth();
+            intrinsicHeight = editDrawable.getIntrinsicHeight();
         }
 
 
         @Override
         public int getMovementFlags(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
-            int flags = 0;
+            if(viewHolder.getAdapterPosition() == -1)
+                return makeMovementFlags(0, 0);
 
-            if(editSwipe && !deleteSwipe)
-                flags = ItemTouchHelper.LEFT;
-            else if(deleteSwipe && !editSwipe)
-                flags = ItemTouchHelper.RIGHT;
-            else if(deleteSwipe && editSwipe)
-                flags = ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT;
+            Transaction t = transactionsAdapter.transactions.getList().get(viewHolder.getAdapterPosition());
 
-            return makeMovementFlags(0, flags);
+            return makeMovementFlags(0, ((rightSwipe == -1 || (rightSwipe == 2 && t.movement == Transaction.t_pays)) ? 0 : ItemTouchHelper.LEFT)
+                    | ((leftSwipe == -1 || (leftSwipe == 2 && t.movement == Transaction.t_pays)) ? 0 : ItemTouchHelper.RIGHT));
         }
 
         @Override
@@ -808,10 +906,15 @@ public class TransactionsFragment extends Fragment {
         public void onChildDraw(@NonNull Canvas c, @NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, float dX, float dY, int actionState, boolean isCurrentlyActive) {
             super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive);
 
+            if(viewHolder.getAdapterPosition() == -1)
+                return;
+
+            Transaction t = transactionsAdapter.transactions.getList().get(viewHolder.getAdapterPosition());
             View itemView = viewHolder.itemView;
             int itemHeight = itemView.getHeight();
 
-            boolean isCancelled = (dX == 0) && !isCurrentlyActive;
+            boolean isCancelled = ((dX == 0) && !isCurrentlyActive) || (((dX>0) ? leftSwipe : rightSwipe) == -1)
+                    || ((((dX>0) ? leftSwipe : rightSwipe) == 2) && t.movement == Transaction.t_pays);
 
             if (isCancelled) {
                 clearCanvas(c, (float) itemView.getLeft(), (float) itemView.getTop(), itemView.getLeft() + dX, (float) itemView.getBottom());
@@ -820,35 +923,51 @@ public class TransactionsFragment extends Fragment {
                 return;
             }
 
-            int deleteIconTop = itemView.getTop() + (itemHeight - deleteIntrinsicHeight) / 2;
-            int deleteIconMargin = (itemHeight - deleteIntrinsicHeight) / 2;
-            int deleteIconLeft = 0;
-            int deleteIconRight = 0;
-            int deleteIconBottom = deleteIconTop + deleteIntrinsicHeight;
+            int iconTop = itemView.getTop() + (itemHeight - intrinsicHeight) / 2;
+            int iconMargin = (itemHeight - intrinsicHeight) / 2;
+            int iconLeft = 0;
+            int iconRight = 0;
+            int iconBottom = iconTop + intrinsicHeight;
 
-            Drawable drawable = deleteDrawable;
+            Drawable drawable = editDrawable;
+
+            switch((dX>0) ? leftSwipe : rightSwipe) {
+                case 0:
+                    mBackground.setColor(editBgColor);
+                    drawable = editDrawable;
+                    break;
+
+                case 1:
+                    mBackground.setColor(duplicateBgColor);
+                    drawable = duplicateDrawable;
+                    break;
+
+                case 2:
+                    mBackground.setColor(paymentBgColor);
+                    drawable = paymentDrawable;
+                    break;
+
+                case 3:
+                    mBackground.setColor(deleteBgColor);
+                    drawable = deleteDrawable;
+                    break;
+            }
 
             if(dX > 0){
-                mBackground.setColor(editBgColor);
                 mBackground.setBounds(itemView.getLeft(), itemView.getTop(), itemView.getLeft() + (int) dX, itemView.getBottom());
 
-                deleteIconRight = itemView.getLeft() + deleteIconMargin + deleteIntrinsicWidth;
-                deleteIconLeft = itemView.getLeft() + deleteIconMargin;
-
-                drawable = editDrawable;
+                iconRight = itemView.getLeft() + iconMargin + intrinsicWidth;
+                iconLeft = itemView.getLeft() + iconMargin;
             } else if(dX < 0){
-                mBackground.setColor(deleteBgColor);
                 mBackground.setBounds(itemView.getRight() + (int) dX, itemView.getTop(), itemView.getRight(), itemView.getBottom());
 
-                deleteIconLeft = itemView.getRight() - deleteIconMargin - deleteIntrinsicWidth;
-                deleteIconRight = itemView.getRight() - deleteIconMargin;
-
-                drawable = deleteDrawable;
+                iconLeft = itemView.getRight() - iconMargin - intrinsicWidth;
+                iconRight = itemView.getRight() - iconMargin;
             }
 
             mBackground.draw(c);
 
-            drawable.setBounds(deleteIconLeft, deleteIconTop, deleteIconRight, deleteIconBottom);
+            drawable.setBounds(iconLeft, iconTop, iconRight, iconBottom);
             drawable.draw(c);
 
             prevdX = dX;
@@ -871,142 +990,192 @@ public class TransactionsFragment extends Fragment {
             final int position = viewHolder.getAdapterPosition();
             final Transaction transaction = mAdapter.transactions.getList().get(position);
 
-            if(prevdX < 0){
-                mAdapter.removeItem(position);
+            switch((prevdX > 0) ? leftSwipe : rightSwipe){
+                case 0:
+                    editTransaction(activity, mAdapter, position);
+                    break;
 
-                Snackbar snackbar = Snackbar
-                        .make(activity.findViewById(android.R.id.content), r.getString(R.string.transactionremovedfromthelist), Snackbar.LENGTH_LONG);
-                snackbar.setAction(r.getString(R.string.undo), new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        mAdapter.restoreItem(transaction, position);
-                        recyclerView.scrollToPosition(position);
-                    }
-                });
+                case 1:
+                    duplicateTransaction(activity, mAdapter, transaction);
+                    break;
 
-                snackbar.setActionTextColor(Color.YELLOW);
-                snackbar.show();
-            } else if(prevdX > 0){
-                final List<Member> memberList = Member.readFromSharedPreferences(activity);
+                case 2:
+                    payTransaction(activity, mAdapter, transaction);
+                    break;
 
-                final List<String> memberNameList = Member.getNameList(memberList);
-
-                if(!memberNameList.contains(transaction.debtor.getName())) {
-                    memberNameList.add(transaction.debtor.getName());
-                    memberList.add(new Member(transaction.debtor.getName()));
-                }
-                if(!memberNameList.contains(transaction.lender.getName())) {
-                    memberNameList.add(transaction.lender.getName());
-                    memberList.add(new Member(transaction.lender.getName()));
-                }
-
-                AlertDialog.Builder builder = new AlertDialog.Builder(activity);
-                LayoutInflater inflater = requireActivity().getLayoutInflater();
-                View dialog = inflater.inflate(R.layout.dialog_create_transaction, null);
-
-                builder.setTitle(r.getString(R.string.edittransaction));
-                builder.setView(dialog);
-
-                final EditText editTextDescription = dialog.findViewById(R.id.editTextDescription);
-                final Spinner spinnerDebtor = dialog.findViewById(R.id.spinnerSender);
-                final EditText editTextAmount = dialog.findViewById(R.id.editTextAmount);
-                final Spinner spinnerMovement = dialog.findViewById(R.id.spinnerMovement);
-                final Spinner spinnerLender = dialog.findViewById(R.id.spinnerRecipient);
-
-                dialog.findViewById(R.id.linearLayout_pickers).setVisibility(View.GONE);
-
-                editTextDescription.setText(transaction.getDescription());
-
-                final ArrayAdapter<String> aADebtor = new ArrayAdapter<>(activity, android.R.layout.simple_spinner_dropdown_item,
-                        addToBeginningOfArray(memberNameList.toArray(new String[0]), r.getString(R.string.debtor)));
-                spinnerDebtor.setAdapter(aADebtor);
-
-                editTextAmount.setText(String.valueOf(transaction.amount));
-
-                final ArrayAdapter<String> aALender = new ArrayAdapter<>(activity, android.R.layout.simple_spinner_dropdown_item,
-                        addToBeginningOfArray(memberNameList.toArray(new String[0]), r.getString(R.string.lender)));
-                spinnerLender.setAdapter(aALender);
-
-                spinnerDebtor.setSelection(memberNameList.indexOf(transaction.debtor.getName()) + 1);
-                spinnerLender.setSelection(memberNameList.indexOf(transaction.lender.getName()) + 1);
-
-                spinnerMovement.setSelection((transaction.movement == Transaction.t_owes) ? 0 : 1);
-
-                builder.setPositiveButton(r.getString(R.string.ok), new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int id) {
-                        transactionsAdapter.modify(position,
-                                new Transaction(editTextDescription.getText().toString(),
-                                        Member.findMember(memberList, spinnerDebtor.getSelectedItem().toString()),
-                                        Member.findMember(memberList, spinnerLender.getSelectedItem().toString()),
-                                        Float.parseFloat(editTextAmount.getText().toString()),
-                                        transaction.timestamp,
-                                        (spinnerMovement.getSelectedItemPosition() == 0)
-                                ));
-                    }
-                })
-                        .setNegativeButton(r.getString(R.string.cancel), new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int id) {
-                                transactionsAdapter.resetItem(position);
-                            }
-                        });
-
-                AlertDialog alertDialog = builder.create();
-                alertDialog.show();
-
-                final Button buttonAdd = alertDialog.getButton(AlertDialog.BUTTON_POSITIVE);
-                buttonAdd.setTextColor(r.getColor(R.color.color4));
-
-                        spinnerDebtor.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-                            @Override
-                            public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
-                                buttonAdd.setEnabled((position != 0) && (position != spinnerLender.getSelectedItemPosition())
-                                        && !((editTextAmount.getText().toString().equals("")) || (Float.parseFloat(editTextAmount.getText().toString()) == 0)));
-
-                                buttonAdd.setTextColor((buttonAdd.isEnabled()) ? (r.getColor(R.color.color4)) : (r.getColor(R.color.colorRedDisabled)));
-                            }
-
-                            @Override
-                            public void onNothingSelected(AdapterView<?> parentView) {}
-                        });
-
-                editTextAmount.addTextChangedListener(new TextWatcher() {
-                    @Override
-                    public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-
-                    @Override
-                    public void onTextChanged(CharSequence s, int start, int before, int count) {}
-
-                    @Override
-                    public void afterTextChanged(Editable s) {
-                        if(s.toString().trim().equals("."))
-                            s.insert(0, "0");
-
-                        buttonAdd.setEnabled(!((s.toString().equals("")) || (Float.parseFloat(s.toString()) == 0)) && (spinnerDebtor.getSelectedItemPosition() != 0)
-                                && (spinnerLender.getSelectedItemPosition() != 0) && (spinnerDebtor.getSelectedItemPosition() != spinnerLender.getSelectedItemPosition()));
-
-                        buttonAdd.setTextColor((buttonAdd.isEnabled()) ? (r.getColor(R.color.color4)) : (r.getColor(R.color.colorRedDisabled)));
-                    }
-                });
-
-                spinnerLender.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-                    @Override
-                    public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
-                        buttonAdd.setEnabled((position != 0) && (position != spinnerDebtor.getSelectedItemPosition())
-                                && !((editTextAmount.getText().toString().equals("")) || (Float.parseFloat(editTextAmount.getText().toString()) == 0)));
-
-                        buttonAdd.setTextColor((buttonAdd.isEnabled()) ? (r.getColor(R.color.color4)) : (r.getColor(R.color.colorRedDisabled)));
-                    }
-
-                    @Override
-                    public void onNothingSelected(AdapterView<?> parentView) {}
-
-                });
+                case 3:
+                    deleteTransaction(activity, mAdapter, position);
+                    break;
             }
         }
     }
 
-    private void enableSwipeToDeleteAndUndo(final Activity activity, final TransactionsAdapter mAdapter, final RecyclerView recyclerView, boolean editSwipe, boolean deleteSwipe) {
-        /*SwipeToDeleteCallback swipeToDeleteCallback = new SwipeToDeleteCallback(requireContext()) {
+    private void editTransaction(final Activity activity, final TransactionsAdapter transactionsAdapter, final int position){
+        final Transaction transaction = transactionsAdapter.transactions.getList().get(position);
+
+        final List<Member> memberList = Member.readFromSharedPreferences(activity);
+
+        final List<String> memberNameList = Member.getNameList(memberList);
+
+        if(!memberNameList.contains(transaction.debtor.getName())) {
+            memberNameList.add(transaction.debtor.getName());
+            memberList.add(new Member(transaction.debtor.getName()));
+        }
+        if(!memberNameList.contains(transaction.lender.getName())) {
+            memberNameList.add(transaction.lender.getName());
+            memberList.add(new Member(transaction.lender.getName()));
+        }
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(activity);
+        LayoutInflater inflater = requireActivity().getLayoutInflater();
+        View dialog = inflater.inflate(R.layout.dialog_create_transaction, null);
+
+        builder.setTitle(r.getString(R.string.edittransaction));
+        builder.setView(dialog);
+
+        final EditText editTextDescription = dialog.findViewById(R.id.editTextDescription);
+        final Spinner spinnerDebtor = dialog.findViewById(R.id.spinnerSender);
+        final EditText editTextAmount = dialog.findViewById(R.id.editTextAmount);
+        final Spinner spinnerMovement = dialog.findViewById(R.id.spinnerMovement);
+        final Spinner spinnerLender = dialog.findViewById(R.id.spinnerRecipient);
+
+        dialog.findViewById(R.id.linearLayout_pickers).setVisibility(View.GONE);
+
+        editTextDescription.setText(transaction.getDescription());
+
+        final ArrayAdapter<String> aADebtor = new ArrayAdapter<>(activity, android.R.layout.simple_spinner_dropdown_item,
+                addToBeginningOfArray(memberNameList.toArray(new String[0]), r.getString(R.string.debtor)));
+        spinnerDebtor.setAdapter(aADebtor);
+
+        editTextAmount.setText(String.valueOf(transaction.amount));
+
+        final ArrayAdapter<String> aALender = new ArrayAdapter<>(activity, android.R.layout.simple_spinner_dropdown_item,
+                addToBeginningOfArray(memberNameList.toArray(new String[0]), r.getString(R.string.lender)));
+        spinnerLender.setAdapter(aALender);
+
+        spinnerDebtor.setSelection(memberNameList.indexOf(transaction.debtor.getName()) + 1);
+        spinnerLender.setSelection(memberNameList.indexOf(transaction.lender.getName()) + 1);
+
+        spinnerMovement.setSelection((transaction.movement == Transaction.t_owes) ? 0 : 1);
+
+        final boolean[] shouldRefresh = {true};
+
+        builder.setPositiveButton(r.getString(R.string.ok), new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                shouldRefresh[0] = false;
+
+                transactionsAdapter.modify(position,
+                        new Transaction(editTextDescription.getText().toString(),
+                                Member.findMember(memberList, spinnerDebtor.getSelectedItem().toString()),
+                                Member.findMember(memberList, spinnerLender.getSelectedItem().toString()),
+                                Float.parseFloat(editTextAmount.getText().toString()),
+                                transaction.timestamp,
+                                (spinnerMovement.getSelectedItemPosition() == 0)
+                        ));
+            }
+        })
+                .setNegativeButton(r.getString(R.string.cancel), null);
+
+        builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
+            @Override
+            public void onDismiss(DialogInterface dialog) {
+                if(shouldRefresh[0])
+                    transactionsAdapter.resetItem(position);
+            }
+        });
+
+        AlertDialog alertDialog = builder.create();
+        alertDialog.show();
+
+        final Button buttonAdd = alertDialog.getButton(AlertDialog.BUTTON_POSITIVE);
+        buttonAdd.setTextColor(r.getColor(R.color.color4));
+
+        spinnerDebtor.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
+                buttonAdd.setEnabled((position != 0) && (position != spinnerLender.getSelectedItemPosition())
+                        && !((editTextAmount.getText().toString().equals("")) || (Float.parseFloat(editTextAmount.getText().toString()) == 0)));
+
+                buttonAdd.setTextColor((buttonAdd.isEnabled()) ? (r.getColor(R.color.color4)) : (r.getColor(R.color.colorRedDisabled)));
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parentView) {}
+        });
+
+        editTextAmount.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                if(s.toString().trim().equals("."))
+                    s.insert(0, "0");
+
+                buttonAdd.setEnabled(!((s.toString().equals("")) || (Float.parseFloat(s.toString()) == 0)) && (spinnerDebtor.getSelectedItemPosition() != 0)
+                        && (spinnerLender.getSelectedItemPosition() != 0) && (spinnerDebtor.getSelectedItemPosition() != spinnerLender.getSelectedItemPosition()));
+
+                buttonAdd.setTextColor((buttonAdd.isEnabled()) ? (r.getColor(R.color.color4)) : (r.getColor(R.color.colorRedDisabled)));
+            }
+        });
+
+        spinnerLender.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
+                buttonAdd.setEnabled((position != 0) && (position != spinnerDebtor.getSelectedItemPosition())
+                        && !((editTextAmount.getText().toString().equals("")) || (Float.parseFloat(editTextAmount.getText().toString()) == 0)));
+
+                buttonAdd.setTextColor((buttonAdd.isEnabled()) ? (r.getColor(R.color.color4)) : (r.getColor(R.color.colorRedDisabled)));
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parentView) {}
+
+        });
+    }
+
+    private void duplicateTransaction(final Activity activity, final TransactionsAdapter transactionsAdapter, final Transaction transaction){
+        transactionsAdapter.addItem(transaction);
+        editTransaction(activity, transactionsAdapter, transactionsAdapter.transactions.getPosition(transaction));
+    }
+
+    private void payTransaction(final Activity activity, final TransactionsAdapter transactionsAdapter, final Transaction transaction){
+        Transaction t = transaction.copy();
+
+        if(t.movement == Transaction.t_pays)
+            return;
+
+        t.movement = Transaction.t_pays;
+
+        if(paymentSetCurDate)
+            t.timestamp = new SimpleDateFormat(Transaction.timeStampFormat, Locale.getDefault()).format(new Date());
+
+        transactionsAdapter.addItem(t);
+    }
+
+    private void deleteTransaction(final Activity activity, final TransactionsAdapter transactionsAdapter, final int position){
+        final Transaction transaction = transactionsAdapter.transactions.getList().get(position);
+
+        transactionsAdapter.removeItem(position);
+
+        Snackbar snackbar = Snackbar
+                .make(activity.findViewById(android.R.id.content), r.getString(R.string.transactionremovedfromthelist), Snackbar.LENGTH_LONG);
+        snackbar.setAction(r.getString(R.string.undo), new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                transactionsAdapter.restoreItem(transaction, position);
+            }
+        });
+
+        snackbar.setActionTextColor(Color.YELLOW);
+        snackbar.show();
+    }
+
+    /*private void enableSwipeToDeleteAndUndo(final Activity activity, final TransactionsAdapter mAdapter, final RecyclerView recyclerView, boolean editSwipe, boolean deleteSwipe) {
+        SwipeToDeleteCallback swipeToDeleteCallback = new SwipeToDeleteCallback(requireContext()) {
             @Override
             public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int i) {
                 final int position = viewHolder.getAdapterPosition();
@@ -1028,10 +1197,10 @@ public class TransactionsFragment extends Fragment {
                 snackbar.show();
 
             }
-        };*/
+        };
         SwipeToDeleteCallback swipeToDeleteCallback = new SwipeToDeleteCallback(requireContext(), activity, mAdapter, recyclerView, false, true);
 
         ItemTouchHelper itemTouchhelper = new ItemTouchHelper(swipeToDeleteCallback);
         itemTouchhelper.attachToRecyclerView(recyclerView);
-    }
+    }*/
 }

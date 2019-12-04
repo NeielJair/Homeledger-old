@@ -8,4 +8,9 @@
     <color name="holo_blue_bright">#ff00ddff</color>
     <color name="colorSelected">#80deea</color>
     <color name="colorRedDisabled">#ac9b9b</color>
+
+    <color name="colorEdit">@color/design_default_color_primary</color>
+    <color name="colorDuplicate">#602080</color>
+    <color name="colorPayment">#ff7a8a</color>
+    <color name="colorDelete">#b80f0a</color>
 </resources>

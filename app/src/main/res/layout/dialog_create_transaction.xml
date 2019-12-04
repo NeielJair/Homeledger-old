@@ -79,10 +79,10 @@
         android:paddingTop="8dp"
         android:paddingStart="8dp"
         android:paddingEnd="8dp"
-        android:maxLength="50"
-        android:maxLines="1"
+        android:maxLength="60"
         android:ems="10"
         android:hint="@string/description"
+        android:inputType="text"
         android:layout_gravity="center_vertical" />
 
     <LinearLayout
