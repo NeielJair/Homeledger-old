@@ -3,6 +3,7 @@ package com.njair.homeledger;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.MenuItem;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBar;
@@ -22,9 +23,21 @@ public class SettingsActivity extends AppCompatActivity {
                 .replace(R.id.settings, new SettingsFragment())
                 .commit();
         ActionBar actionBar = getSupportActionBar();
+        setTitle(getResources().getString(R.string.action_settings));
         if (actionBar != null) {
             actionBar.setDisplayHomeAsUpEnabled(true);
         }
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            // Respond to the action bar's Up/Home button
+            case android.R.id.home:
+                super.onBackPressed();
+                return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     public static class SettingsFragment extends PreferenceFragmentCompat {

@@ -3,58 +3,63 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:orientation="horizontal">
+    android:layout_height="wrap_content">
 
     <TextView
         android:id="@+id/textViewMemberName"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_vertical"
-        android:drawableLeft="@drawable/ic_face_white_32dp"
+        android:drawableStart="@drawable/ic_face_white_32dp"
         android:drawablePadding="5dp"
         android:drawableTint="@color/colorAccent"
         android:gravity="center_vertical"
-        android:paddingLeft="8dp"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
         android:paddingTop="8dp"
         android:paddingBottom="8dp"
-        android:text="Member name"
+        android:text="@string/member_name"
         android:textColor="@color/common_google_signin_btn_text_light_default"
-        android:textSize="20dp"
+        android:textSize="20sp"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        tools:ignore="UnusedAttribute" />
 
     <ImageView
         android:id="@+id/imageViewTrash"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
-        android:layout_gravity="right|center_vertical"
+        android:layout_gravity="end|center_vertical"
         android:layout_weight="1"
         android:paddingTop="4dp"
         android:paddingBottom="4dp"
-        android:paddingRight="12dp"
+        android:paddingStart="0dp"
+        android:paddingEnd="12dp"
         android:tint="@color/colorAccent"
         android:clickable="true"
         android:focusable="true"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/imageViewBrush"
         app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/ic_trash_white_24dp" />
+        app:srcCompat="@drawable/ic_trash_white_24dp"
+        android:contentDescription="@string/delete_member" />
 
     <ImageView
         android:id="@+id/imageViewBrush"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
-        android:layout_gravity="right|center_vertical"
+        android:layout_gravity="end|center_vertical"
         android:layout_weight="1"
-        android:paddingTop="4dp"
-        android:paddingBottom="4dp"
-        android:paddingRight="8dp"
-        android:tint="@color/colorAccent"
         android:clickable="true"
         android:focusable="true"
+        android:paddingTop="4dp"
+        android:paddingStart="0dp"
+        android:paddingEnd="8dp"
+        android:paddingBottom="4dp"
+        android:tint="@color/colorAccent"
         app:layout_constraintBottom_toBottomOf="@+id/textViewMemberName"
-        app:layout_constraintEnd_toEndOf="@+id/textViewMemberName"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@+id/textViewMemberName"
-        app:srcCompat="@drawable/ic_brush_white_24dp" />
+        app:srcCompat="@drawable/ic_brush_white_24dp"
+        android:contentDescription="@string/edit_member_color" />
 </androidx.constraintlayout.widget.ConstraintLayout>

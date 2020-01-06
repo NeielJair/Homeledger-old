@@ -7,6 +7,7 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
 
     <application
+        android:name=".Service.MyApp"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
@@ -15,7 +16,7 @@
         android:theme="@style/AppTheme">
         <activity
             android:name=".SettingsActivity"
-            android:label="Settings"></activity>
+            android:label="Settings" />
         <activity
             android:name=".GroupMain"
             android:label="@string/title_activity_group_main" />
@@ -23,7 +24,7 @@
             android:name=".MainActivity"
             android:label="@string/app_name"
             android:theme="@style/AppTheme.NoActionBar">
-            <tools:validation testUrl="http://www.homeledger.com" />
+            <tools:validation testUrl="http://www.homeledger.com/group" />
 
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -37,7 +38,8 @@
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data
-                    android:host="*.homeledger.com"
+                    android:host="www.homeledger.com"
+                    android:path="/group"
                     android:scheme="http" />
             </intent-filter>
         </activity>

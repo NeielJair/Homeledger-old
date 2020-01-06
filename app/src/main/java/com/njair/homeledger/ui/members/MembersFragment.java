@@ -4,37 +4,39 @@ import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.Intent;
+import android.content.res.Resources;
 import android.graphics.Color;
-import android.graphics.ColorFilter;
-import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
-import android.media.Image;
 import android.os.Bundle;
 import android.text.InputType;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
-import androidx.annotation.Nullable;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProviders;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.njair.homeledger.GroupMain;
 import com.njair.homeledger.R;
+import com.njair.homeledger.Service.Group;
 import com.njair.homeledger.Service.Member;
-import com.njair.homeledger.Service.Transaction;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,67 +46,84 @@ import petrov.kristiyan.colorpicker.ColorPicker;
 
 public class MembersFragment extends Fragment {
 
+    private String roomKey;
+
+    public MembersAdapter membersAdapter;
+    private TextView textViewDisplay;
+    private TextView textViewDisplay2;
+    private boolean hasDownloaded = false;
+
+    public Resources r;
+
+    public Group group;
+    public DatabaseReference groupRef;
+
     private MembersViewModel membersViewModel;
-    private List<Member> memberList = new ArrayList<>();
     private final int[] colorList = {Color.RED, Color.BLUE, Color.rgb(0, 0, 128),
             Color.rgb(204, 0, 204), Color.rgb(0, 128, 0), Color.rgb(204,204,0),
             Color.rgb(255, 165, 0), Color.rgb(128,0,128), Color.rgb(204, 0, 102), Color.rgb(218,165,32)};
 
-    public View onCreateView(@NonNull final LayoutInflater inflater,
-                             ViewGroup container, Bundle savedInstanceState) {
+    public View onCreateView(@NonNull final LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         membersViewModel =
                 ViewModelProviders.of(this).get(MembersViewModel.class);
         View root = inflater.inflate(R.layout.fragment_members, container, false);
-        final TextView textView = root.findViewById(R.id.text_notifications);
+        /*final TextView textView = root.findViewById(R.id.text_notifications);
         membersViewModel.getText().observe(this, new Observer<String>() {
             @Override
             public void onChanged(@Nullable String s) {
                 textView.setText(s);
             }
-        });
+        });*/
 
-        memberList = Member.readFromSharedPreferences(getActivity());
+        r = getResources();
+
+        roomKey = ((GroupMain) getActivity()).getRoomKey();
+        groupRef = FirebaseDatabase.getInstance().getReference().child("groups").child(roomKey);
 
         RecyclerView membersRecyclerView = root.findViewById(R.id.recyclerview_members);
-        final MembersAdapter membersAdapter = new MembersAdapter(getActivity(), memberList);
+        membersAdapter = new MembersAdapter(getActivity());
         membersRecyclerView.setAdapter(membersAdapter);
         membersRecyclerView.setLayoutManager(new LinearLayoutManager(getActivity(), LinearLayoutManager.VERTICAL, false));
         membersRecyclerView.addItemDecoration(new DividerItemDecoration(getContext(), DividerItemDecoration.VERTICAL));
 
+        textViewDisplay = root.findViewById(R.id.textViewDisplay);
+        textViewDisplay2 = root.findViewById(R.id.textViewDisplay2);
+        textViewDisplay.setVisibility(View.INVISIBLE);
+        textViewDisplay2.setVisibility(View.INVISIBLE);
+
+        //region [Manage FAB]
         final FloatingActionButton fabAdd = root.findViewById(R.id.fabAdd);
         fabAdd.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(final View view) {
-                if(memberList.size() < colorList.length){
+                if(group.memberList.size() < colorList.length){
                     AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-                    builder.setTitle("Add member");
+                    builder.setTitle(r.getString(R.string.add_member));
 
                     final EditText input = new EditText(getActivity());
-                    input.setHint("Member name");
+                    input.setHint(r.getString(R.string.member_name));
                     input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PERSON_NAME);
                     builder.setView(input);
 
-                    builder.setPositiveButton("Add", new DialogInterface.OnClickListener() {
+                    builder.setPositiveButton(r.getString(R.string.add), new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             String inputName = input.getText().toString().trim();
 
                             if(checkNameAvailable(inputName))
-                                membersAdapter.addItem(new Member(inputName, randomAvailableColor()));
+                                new Member(inputName, randomAvailableColor()).upload(roomKey, null);
                             else
-                                Snackbar.make(view, "Member name is not available.", Snackbar.LENGTH_LONG).show();
+                                Snackbar.make(view, r.getString(R.string.member_name_not_available), Snackbar.LENGTH_LONG).show();
                         }
                     });
-                    builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    builder.setNegativeButton(r.getString(R.string.cancel), new DialogInterface.OnClickListener() {
                         @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            dialog.cancel();
-                        }
+                        public void onClick(DialogInterface dialog, int which) {}
                     });
 
                     builder.show();
                     }
-                else Snackbar.make(view, "Maximum amount of users reached.", Snackbar.LENGTH_LONG).show();
+                else Snackbar.make(view, getString(R.string.maximum_amount_of_members_reached), Snackbar.LENGTH_LONG).show();
             }
         });
 
@@ -119,12 +138,22 @@ public class MembersFragment extends Fragment {
                 }
             }
         });
+        //endregion
 
         return root;
     }
 
+    public void setGroup(Group group){
+        this.group = group;
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+    }
+
     private boolean checkColorAvailable(int color){
-        for(Member member : memberList){
+        for(Member member : group.memberList){
             if(member.color == color)
                 return false;
         }
@@ -133,7 +162,7 @@ public class MembersFragment extends Fragment {
     }
 
     private boolean checkNameAvailable(String name){
-        for(Member member : memberList){
+        for(Member member : group.memberList){
             if(member.getName().trim().equals(name.trim())){
                 return false;
             }
@@ -145,7 +174,7 @@ public class MembersFragment extends Fragment {
     private int randomAvailableColor(){
         int colorListLength = colorList.length;
 
-        if(memberList.size() < colorListLength){
+        if(group.memberList.size() < colorListLength){
             int color;
             int randomInt = new Random().nextInt(colorListLength);
 
@@ -161,14 +190,11 @@ public class MembersFragment extends Fragment {
         return Color.BLACK;
     }
 
-    class MembersAdapter extends RecyclerView.Adapter<MembersAdapter.ViewHolder> {
+    public class MembersAdapter extends RecyclerView.Adapter<MembersAdapter.ViewHolder> {
         private Context context;
 
-        private List<Member> members;
-
-        public MembersAdapter(Context context, List<Member> members) {
+        public MembersAdapter(Context context) {
             this.context = context;
-            this.members = members;
         }
 
         @NonNull
@@ -185,7 +211,7 @@ public class MembersFragment extends Fragment {
             //Toast.makeText(getActivity(), "onBindViewHolder: called", Toast.LENGTH_SHORT).slideUp();
             //members.get(position).adaptView((TransactionLayout) holder.view);
 
-            final Member member = members.get(position);
+            final Member member = group.memberList.get(position);
 
             holder.textViewMemberName.setText(member.getName());
             drawableChangeTint(holder.textViewMemberName.getCompoundDrawables(), member.color);
@@ -204,13 +230,32 @@ public class MembersFragment extends Fragment {
                         }
                         case MotionEvent.ACTION_UP:
                             AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-                            builder.setMessage("Delete member " + member.getName() + "?")
-                                    .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                            builder.setMessage(String.format(r.getString(R.string.delete_member_), member.getName()))
+                                    .setPositiveButton(r.getString(R.string.yes), new DialogInterface.OnClickListener() {
                                         public void onClick(DialogInterface dialog, int id) {
-                                            removeItem(position);
+                                            if(member.getNodeId() != null && !member.getNodeId().equals("")){
+                                                groupRef.child("members").child(member.getNodeId()).removeValue().addOnCompleteListener(new OnCompleteListener<Void>() {
+                                                    @Override
+                                                    public void onComplete(@NonNull Task<Void> task) {
+                                                        Snackbar.make(requireActivity().findViewById(android.R.id.content),
+                                                                String.format(r.getString(R.string.member__deleted), member.getName()), Snackbar.LENGTH_LONG)
+                                                                .setAction(r.getString(R.string.undo), new View.OnClickListener() {
+                                                                    @Override
+                                                                    public void onClick(View v) {
+                                                                        member.upload(roomKey, null);
+                                                                    }
+                                                                })
+                                                                .setActionTextColor(member.color/3)
+                                                                .show();
+                                                    }
+                                                });
+                                            } else {
+                                                Toast.makeText(context, r.getString(R.string.an_error_has_occurred) + "member doesn't exist in database, try refreshing.",
+                                                        Toast.LENGTH_LONG).show();
+                                            }
                                         }
                                     })
-                                    .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                                    .setNegativeButton(r.getString(R.string.no), new DialogInterface.OnClickListener() {
                                         public void onClick(DialogInterface dialog, int id) {}
                                     }).show();
 
@@ -242,18 +287,16 @@ public class MembersFragment extends Fragment {
                             IVBrush.setColorFilter(member.color);
                             IVBrush.invalidate();
 
-                            if(memberList.size() < colorList.length){
+                            if(group.memberList.size() < colorList.length){
                                 ColorPicker colorPicker = new ColorPicker(getActivity());
-                                colorPicker.setTitle("Choose a color for " + member.getName());
+                                colorPicker.setTitle(String.format(getResources().getString(R.string.choose_a_color_for_), member.getName()));
                                 colorPicker.setColors(removeColorsFromArrayToHex(colorList));
                                 colorPicker.setOnFastChooseColorListener(new ColorPicker.OnFastChooseColorListener() {
                                     @Override
-                                    public void setOnFastChooseColorListener(int i,int color) {
+                                    public void setOnFastChooseColorListener(int i, int color) {
                                         if(color != Color.WHITE){
-                                            List<Member> newList = memberList;
-                                            newList.set(position, new Member(member.getName(), color));
-
-                                            update(newList);
+                                            member.setColor(color);
+                                            member.upload(roomKey, null);
                                         }
                                     }
 
@@ -264,7 +307,7 @@ public class MembersFragment extends Fragment {
                                 colorPicker.setRoundColorButton(true);
                                 colorPicker.show();
                             } else
-                                Snackbar.make(v, "No colors are available.", Snackbar.LENGTH_LONG).show();
+                                Snackbar.make(v, r.getString(R.string.no_colors_are_available), Snackbar.LENGTH_LONG).show();
 
                             break;
 
@@ -293,25 +336,18 @@ public class MembersFragment extends Fragment {
 
         @Override
         public int getItemCount() {
-            return members.size();
-        }
+            int size = group.memberList.size();
+            if(size == 0 && hasDownloaded){
+                textViewDisplay.setVisibility(View.VISIBLE);
+                textViewDisplay2.setVisibility(View.VISIBLE);
 
-        public void addItem(Member member) {
-            members.add(member);
-            Member.writeToSharedPreferences(getActivity(), members);
-            notifyDataSetChanged();
-        }
+            }
+            else{
+                textViewDisplay.setVisibility(View.GONE);
+                textViewDisplay2.setVisibility(View.GONE);
+            }
 
-        public void removeItem(int position){
-            members.remove(position);
-            Member.writeToSharedPreferences(getActivity(), members);
-            notifyDataSetChanged();
-        }
-
-        public void update(List<Member> members) {
-            this.members = members;
-            Member.writeToSharedPreferences(getActivity(), members);
-            notifyDataSetChanged();
+            return group.memberList.size();
         }
 
         public class ViewHolder extends RecyclerView.ViewHolder {

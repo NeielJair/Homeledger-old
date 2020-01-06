@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical">
@@ -11,6 +11,7 @@
         android:layout_height="wrap_content"
         android:paddingTop="4dp"
         android:paddingBottom="4dp"
+        android:baselineAligned="false"
         android:focusable="true"
         android:clickable="true"
         android:orientation="horizontal" >
@@ -31,6 +32,7 @@
                 android:textColor="@color/black_de"
                 android:textSize="16sp"
                 android:text="@string/date"
+                android:paddingStart="0dp"
                 android:paddingEnd="4dp" />
 
             <TextView
@@ -39,7 +41,9 @@
                 android:layout_height="wrap_content"
                 android:ems="10"
                 android:text="dd/MM/yyyy"
-                android:paddingEnd="4dp" />
+                android:paddingStart="0dp"
+                android:paddingEnd="4dp"
+                tools:ignore="HardcodedText" />
         </LinearLayout>
 
         <LinearLayout
@@ -60,6 +64,7 @@
                 android:textColor="@color/black_de"
                 android:textSize="16sp"
                 android:text="@string/time"
+                android:paddingStart="0dp"
                 android:paddingEnd="4dp" />
 
             <TextView
@@ -68,7 +73,9 @@
                 android:layout_height="wrap_content"
                 android:ems="10"
                 android:text="hh:mm"
-                android:paddingEnd="4dp" />
+                android:paddingStart="0dp"
+                android:paddingEnd="4dp"
+                tools:ignore="HardcodedText" />
         </LinearLayout>
     </LinearLayout>
 
@@ -83,7 +90,8 @@
         android:ems="10"
         android:hint="@string/description"
         android:inputType="text"
-        android:layout_gravity="center_vertical" />
+        android:layout_gravity="center_vertical"
+        tools:ignore="Autofill" />
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -141,10 +149,11 @@
             android:paddingStart="8dp"
             android:paddingEnd="8dp"
             android:ems="10"
-            android:hint="Amount"
+            android:hint="@string/amount"
             android:layout_weight="5"
             android:layout_gravity="center_vertical"
-            android:inputType="numberDecimal" />
+            android:inputType="numberDecimal"
+            tools:ignore="Autofill" />
     </LinearLayout>
 
 

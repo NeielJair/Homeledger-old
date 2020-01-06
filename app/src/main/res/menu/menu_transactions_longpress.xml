@@ -2,17 +2,17 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
         android:id="@+id/menu_edit"
-        android:title="Modify" />
+        android:title="@string/modify" />
 
     <item
         android:id="@+id/menu_duplicate"
-        android:title="Duplicate" />
+        android:title="@string/duplicate" />
 
     <item
         android:id="@+id/menu_pay"
-        android:title="Register payment" />
+        android:title="@string/register_payment" />
 
     <item
         android:id="@+id/menu_delete"
-        android:title="Delete" />
+        android:title="@string/delete" />
 </menu>

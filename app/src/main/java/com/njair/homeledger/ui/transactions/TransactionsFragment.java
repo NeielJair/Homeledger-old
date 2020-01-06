@@ -20,7 +20,9 @@ import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.text.Editable;
+import android.text.InputType;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.ContextMenu;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -42,29 +44,39 @@ import android.widget.Spinner;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.TimePicker;
+import android.widget.Toast;
 
-import androidx.annotation.Nullable;
 import androidx.annotation.NonNull;
+import androidx.appcompat.view.menu.MenuView;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProviders;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.njair.homeledger.GroupMain;
+import com.njair.homeledger.MainActivity;
 import com.njair.homeledger.R;
+import com.njair.homeledger.Service.Group;
 import com.njair.homeledger.Service.Member;
+import com.njair.homeledger.Service.MyApp;
 import com.njair.homeledger.Service.Transaction;
-import com.njair.homeledger.Service.Transaction.TransactionList;
-import com.njair.homeledger.Service.Transaction.SortByStruct;
+import com.njair.homeledger.Service.TransactionList;
+import com.njair.homeledger.Service.SortByStruct;
 import com.njair.homeledger.ui.DialogDrawerView;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
@@ -73,45 +85,73 @@ import java.util.Locale;
 
 public class TransactionsFragment extends Fragment {
 
+    private DatabaseReference mDatabase;
+    private DatabaseReference groupRef;
+    private String roomKey;
+
     private TransactionsViewModel transactionsViewModel;
 
-    private TransactionList transactionList = new TransactionList();
+    //private TransactionList transactionList = new TransactionList();
+    //private List<Member> group.memberList = new ArrayList<>();
+    private Group group = Group.dummy();
 
     private FloatingActionButton fabWrite;
-    private TransactionsAdapter transactionsAdapter;
+    public TransactionsAdapter transactionsAdapter;
+    private TextView textViewDisplay;
+    private TextView textViewDisplay2;
+    private boolean hasDownloaded = false;
 
     private int valLeftSwipe;
     private int valRightSwipe;
     private boolean paymentSetCurDate;
 
+    public ArrayAdapter<String> aASender;
+
+    public ArrayAdapter<String> aARecipient;
+
     private Resources r;
 
-    public View onCreateView(@NonNull LayoutInflater inflater,
-                             ViewGroup container, Bundle savedInstanceState) {
-        transactionsViewModel =
-                ViewModelProviders.of(this).get(TransactionsViewModel.class);
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        transactionsViewModel = ViewModelProviders.of(this).get(TransactionsViewModel.class);
         View root = inflater.inflate(R.layout.fragment_transactions, container, false);
-        final TextView textView = root.findViewById(R.id.text_transactions);
-        transactionsViewModel.getText().observe(this, new Observer<String>() {
-            @Override
-            public void onChanged(@Nullable String s) {
-                //textView.setText(s);
-            }
-        });
+
+        roomKey = ((GroupMain) getActivity()).getRoomKey();
+        requireActivity().setTitle(roomKey);
+
+        groupRef = FirebaseDatabase.getInstance().getReference().child("groups").child(roomKey);
+
+        mDatabase = FirebaseDatabase.getInstance().getReference();
 
         final Activity activity = requireActivity();
         final Context context = requireContext();
         r = getResources();
 
-        transactionList = TransactionList.readFromSharedPreferences(activity);
-
-        RecyclerView transactionsRecyclerView = root.findViewById(R.id.recyclerview_transactions);
-        transactionsAdapter = new TransactionsAdapter(activity, transactionList, transactionsRecyclerView);
+        final RecyclerView transactionsRecyclerView = root.findViewById(R.id.recyclerView_transactions);
+        transactionsAdapter = new TransactionsAdapter(activity);
         transactionsRecyclerView.setAdapter(transactionsAdapter);
         transactionsRecyclerView.setLayoutManager(new LinearLayoutManager(activity, LinearLayoutManager.VERTICAL, false));
         transactionsRecyclerView.addItemDecoration(new DividerItemDecoration(context, DividerItemDecoration.VERTICAL));
 
-        //Enable item swipe
+        textViewDisplay = root.findViewById(R.id.textViewDisplay);
+        textViewDisplay2 = root.findViewById(R.id.textViewDisplay2);
+        textViewDisplay.setVisibility(View.GONE);
+        textViewDisplay2.setVisibility(View.GONE);
+
+        setHasOptionsMenu(true);
+
+        ArrayList<String> aLSender = new ArrayList<>();
+        ArrayList<String> aLRecipient = new ArrayList<>();
+
+        aLSender.add(r.getString(R.string.debtor));
+        aLRecipient.add(r.getString(R.string.lender));
+
+        aASender = new ArrayAdapter<>(activity,
+                android.R.layout.simple_spinner_dropdown_item, aLSender);
+
+        aARecipient = new ArrayAdapter<>(activity,
+                android.R.layout.simple_spinner_dropdown_item, aLRecipient);
+
+        //region [Enable item swipe]
         SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(activity);
         try {
             valLeftSwipe = Integer.parseInt(settings.getString("pref_leftSwipe", "0"));
@@ -126,18 +166,13 @@ public class TransactionsFragment extends Fragment {
                 transactionsRecyclerView, valLeftSwipe, valRightSwipe);
         ItemTouchHelper itemTouchhelper = new ItemTouchHelper(swipeToDeleteCallback);
         itemTouchhelper.attachToRecyclerView(transactionsRecyclerView);
+        //endregion
 
-        //enableSwipeToDeleteAndUndo(activity, transactionsAdapter, transactionsRecyclerView);
-
-        setHasOptionsMenu(true);
-
-        //region [Handle dialog drawer: add transaction]
+        //region [Handle dialog drawer: put transaction]
         final DialogDrawerView dialogDrawer = root.findViewById(R.id.bottomDrawerTransaction);
-        dialogDrawer.setTitle(r.getString(R.string.addtransaction));
+        dialogDrawer.setTitle(r.getString(R.string.add_transaction));
 
         final ConstraintLayout dialogLayout = root.findViewById(R.id.linearLayout);
-
-        final List<Member> memberList = Member.readFromSharedPreferences(activity);
 
         final LinearLayout buttonDatePicker = dialogLayout.findViewById(R.id.buttonDatePicker);
         final TextView textViewDate = dialogLayout.findViewById(R.id.textViewDate);
@@ -152,14 +187,6 @@ public class TransactionsFragment extends Fragment {
         final ImageView imageViewDismiss = dialogDrawer.findViewById(R.id.imageViewDismiss);
         final Button buttonCancel = dialogDrawer.findViewById(R.id.buttonCancel);
         final Button buttonAdd = dialogDrawer.findViewById(R.id.buttonOk);
-
-        final ArrayAdapter<String> aASender = new ArrayAdapter<>(activity, android.R.layout.simple_spinner_dropdown_item,
-                addToBeginningOfArray(Member.getNameList(memberList).toArray(new String[0]), r.getString(R.string.debtor)));
-        spinnerSender.setAdapter(aASender);
-
-        final ArrayAdapter<String> aARecipient = new ArrayAdapter<>(activity, android.R.layout.simple_spinner_dropdown_item,
-                addToBeginningOfArray(Member.getNameList(memberList).toArray(new String[0]), r.getString(R.string.lender)));
-        spinnerRecipient.setAdapter(aARecipient);
 
         final Calendar date = Calendar.getInstance();
 
@@ -210,6 +237,8 @@ public class TransactionsFragment extends Fragment {
 
         buttonAdd.setEnabled(false);
 
+        spinnerSender.setAdapter(aASender);
+
         spinnerSender.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
@@ -242,6 +271,8 @@ public class TransactionsFragment extends Fragment {
                 buttonAdd.setTextColor((buttonAdd.isEnabled()) ? (r.getColor(R.color.color4)) : (r.getColor(R.color.colorRedDisabled)));
             }
         });
+
+        spinnerRecipient.setAdapter(aARecipient);
 
         spinnerRecipient.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
@@ -288,15 +319,12 @@ public class TransactionsFragment extends Fragment {
                 if(fabWrite.getVisibility() != View.VISIBLE)
                     fabWrite.show();
 
-                transactionsAdapter.addItem(
-                        new Transaction(editTextDescription.getText().toString(),
-                                Member.findMember(memberList, spinnerSender.getSelectedItem().toString()),
-                                Member.findMember(memberList, spinnerRecipient.getSelectedItem().toString()),
-                                Float.parseFloat(editTextAmount.getText().toString()),
-                                sdfTimestamp.format(date.getTime()),
-                                (spinnerMovement.getSelectedItemPosition() == 0)
-                        )
-                );
+                group.add(new Transaction(editTextDescription.getText().toString(),
+                        Member.findMember(group.memberList, spinnerSender.getSelectedItem().toString()),
+                        Member.findMember(group.memberList, spinnerRecipient.getSelectedItem().toString()),
+                        Float.parseFloat(editTextAmount.getText().toString()),
+                        sdfTimestamp.format(date.getTime()),
+                        (spinnerMovement.getSelectedItemPosition() == 0)), null);
             }
         });
         //endregion
@@ -333,6 +361,10 @@ public class TransactionsFragment extends Fragment {
         return root;
     }
 
+    public void setGroup(Group group){
+        this.group = group;
+    }
+
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         inflater.inflate(R.menu.menu_transactions_main, menu);
@@ -341,17 +373,17 @@ public class TransactionsFragment extends Fragment {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            case R.id.actionbar_sortby:
+            //region [actionbar_sortby]
+            case R.id.actionbar_sortBy:
                 final Activity activity = requireActivity();
 
-                final List<Member> memberList = Member.readFromSharedPreferences(activity);
-                final SortByStruct sortByStruct = SortByStruct.readFromSharedPreferences(activity);
+                final SortByStruct sortByStruct = SortByStruct.readFromSharedPreferences(requireActivity());
 
                 AlertDialog.Builder builder = new AlertDialog.Builder(activity);
                 LayoutInflater inflater = requireActivity().getLayoutInflater();
                 View dialogLayout = inflater.inflate(R.layout.dialog_sort_transactions, null);
 
-                builder.setTitle(r.getString(R.string.sortby));
+                builder.setTitle(r.getString(R.string.sort_by));
                 builder.setView(dialogLayout);
 
                 final Switch switchLowestToHighest = dialogLayout.findViewById(R.id.switchLowestToHighest);
@@ -360,11 +392,11 @@ public class TransactionsFragment extends Fragment {
                 final RadioGroup rg = dialogLayout.findViewById(R.id.radioGroup);
 
                 final ArrayAdapter<String> aAMembers = new ArrayAdapter<>(activity, android.R.layout.simple_spinner_dropdown_item,
-                        Member.getNameList(memberList).toArray(new String[0]));
+                        Member.getNameList(group.memberList).toArray(new String[0]));
                 spinnerMember.setAdapter(aAMembers);
 
                 if ((sortByStruct.member == null) || (sortByStruct.member.color == Color.BLACK))
-                    sortByStruct.member = memberList.get(0);
+                    sortByStruct.member = group.memberList.get(0);
 
                 switch (sortByStruct.sortType) {
                     case Transaction.st_timestamp:
@@ -372,7 +404,7 @@ public class TransactionsFragment extends Fragment {
 
                         switchLowestToHighest.setChecked(sortByStruct.lowestToHighest);
 
-                        textViewLowestToHighest.setText((sortByStruct.lowestToHighest) ? r.getString(R.string.newesttooldest) : r.getString(R.string.oldesttonewest));
+                        textViewLowestToHighest.setText((sortByStruct.lowestToHighest) ? r.getString(R.string.newest_to_oldest) : r.getString(R.string.oldest_to_newest));
 
                         switchLowestToHighest.setVisibility(View.VISIBLE);
                         textViewLowestToHighest.setVisibility(View.VISIBLE);
@@ -403,7 +435,7 @@ public class TransactionsFragment extends Fragment {
 
                         switchLowestToHighest.setChecked(sortByStruct.lowestToHighest);
 
-                        textViewLowestToHighest.setText((sortByStruct.lowestToHighest) ? r.getString(R.string.lowesttohighest) : r.getString(R.string.highesttolowest));
+                        textViewLowestToHighest.setText((sortByStruct.lowestToHighest) ? r.getString(R.string.lowest_to_highest) : r.getString(R.string.highest_to_lowest));
 
                         switchLowestToHighest.setVisibility(View.VISIBLE);
                         textViewLowestToHighest.setVisibility(View.VISIBLE);
@@ -418,7 +450,7 @@ public class TransactionsFragment extends Fragment {
 
                         switchLowestToHighest.setChecked(sortByStruct.lowestToHighest);
 
-                        textViewLowestToHighest.setText((sortByStruct.lowestToHighest) ? r.getString(R.string.debtsfirst) : r.getString(R.string.loansfirst));
+                        textViewLowestToHighest.setText((sortByStruct.lowestToHighest) ? r.getString(R.string.debts_first) : r.getString(R.string.loans_first));
 
                         switchLowestToHighest.setVisibility(View.VISIBLE);
                         textViewLowestToHighest.setVisibility(View.VISIBLE);
@@ -440,13 +472,13 @@ public class TransactionsFragment extends Fragment {
 
                                 if (checkedId == R.id.radioButtonTimestamp) {
                                     sortByStruct.sortType = Transaction.st_timestamp;
-                                    textViewLowestToHighest.setText((sortByStruct.lowestToHighest) ? r.getString(R.string.newesttooldest) : r.getString(R.string.oldesttonewest));
+                                    textViewLowestToHighest.setText((sortByStruct.lowestToHighest) ? r.getString(R.string.newest_to_oldest) : r.getString(R.string.oldest_to_newest));
                                 } else if (checkedId == R.id.radioButtonAmount) {
                                     sortByStruct.sortType = Transaction.st_amount;
-                                    textViewLowestToHighest.setText((sortByStruct.lowestToHighest) ? r.getString(R.string.lowesttohighest) : r.getString(R.string.highesttolowest));
+                                    textViewLowestToHighest.setText((sortByStruct.lowestToHighest) ? r.getString(R.string.lowest_to_highest) : r.getString(R.string.highest_to_lowest));
                                 } else if (checkedId == R.id.radioButtonMovement) {
                                     sortByStruct.sortType = Transaction.st_movement;
-                                    textViewLowestToHighest.setText((sortByStruct.lowestToHighest) ? r.getString(R.string.debtsfirst) : r.getString(R.string.loansfirst));
+                                    textViewLowestToHighest.setText((sortByStruct.lowestToHighest) ? r.getString(R.string.debts_first) : r.getString(R.string.loans_first));
                                 }
 
                                 switchLowestToHighest.setVisibility(View.VISIBLE);
@@ -485,15 +517,15 @@ public class TransactionsFragment extends Fragment {
 
                         switch (sortByStruct.sortType) {
                             case Transaction.st_timestamp:
-                                textViewLowestToHighest.setText((isChecked) ? r.getString(R.string.newesttooldest) : r.getString(R.string.oldesttonewest));
+                                textViewLowestToHighest.setText((isChecked) ? r.getString(R.string.newest_to_oldest) : r.getString(R.string.oldest_to_newest));
                                 break;
 
                             case Transaction.st_amount:
-                                textViewLowestToHighest.setText((isChecked) ? r.getString(R.string.lowesttohighest) : r.getString(R.string.highesttolowest));
+                                textViewLowestToHighest.setText((isChecked) ? r.getString(R.string.lowest_to_highest) : r.getString(R.string.highest_to_lowest));
                                 break;
 
                             case Transaction.st_movement:
-                                textViewLowestToHighest.setText((isChecked) ? r.getString(R.string.debtsfirst) : r.getString(R.string.loansfirst));
+                                textViewLowestToHighest.setText((isChecked) ? r.getString(R.string.debts_first) : r.getString(R.string.loans_first));
                                 break;
 
                             default:
@@ -512,7 +544,7 @@ public class TransactionsFragment extends Fragment {
                 spinnerMember.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
                     @Override
                     public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
-                        sortByStruct.member = memberList.get(position);
+                        sortByStruct.member = group.memberList.get(position);
                     }
 
                     @Override
@@ -536,6 +568,43 @@ public class TransactionsFragment extends Fragment {
                 AlertDialog dialog = builder.create();
                 dialog.show();
                 break;
+            //endregion
+
+            /*case R.id.actionbar_upload:
+                upload();
+
+                Toast.makeText(requireContext(),"Uploaded", Toast.LENGTH_SHORT).show();
+                break;
+
+            case R.id.actionbar_setRoom:
+                AlertDialog.Builder _builder = new AlertDialog.Builder(getActivity());
+                _builder.setTitle("Change room key");
+
+                final EditText input = new EditText(getActivity());
+                input.setHint("Room key");
+                input.setText(roomKey);
+                input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PERSON_NAME);
+                _builder.setView(input);
+
+                _builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        roomKey = input.getText().toString();
+                        requireActivity().setTitle(roomKey);
+
+                        requireActivity().getSharedPreferences("Settings", 0).edit().putString("RoomKey", roomKey).apply();
+
+                    }
+                });
+                _builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.cancel();
+                    }
+                });
+
+                _builder.show();
+                break;*/
         }
 
         return super.onOptionsItemSelected(item);
@@ -574,19 +643,13 @@ public class TransactionsFragment extends Fragment {
         spinnerMovement.setSelection(0);
     }
 
-    class TransactionsAdapter extends RecyclerView.Adapter<TransactionsAdapter.ViewHolder> {
+    public class TransactionsAdapter extends RecyclerView.Adapter<TransactionsAdapter.ViewHolder> {
         private Activity activity;
-        private Context context;
 
-        private TransactionList transactions;
         private SortByStruct sortByStruct;
 
-        private RecyclerView recyclerView;
-
-        private TransactionsAdapter(Activity activity, TransactionList transactions, RecyclerView recyclerView) {
+        public TransactionsAdapter(Activity activity){
             this.activity = activity;
-            this.transactions = transactions;
-            this.recyclerView = recyclerView;
         }
 
         @NonNull
@@ -603,7 +666,7 @@ public class TransactionsFragment extends Fragment {
             //Toast.makeText(activity, "onBindViewHolder: called", Toast.LENGTH_SHORT).slideUp();
             //transactions.get(position).adaptView((TransactionLayout) holder.view);
 
-            final Transaction transaction = transactions.getList().get(position);
+            final Transaction transaction = group.transactionList.getList().get(position);
 
             holder.imageViewLeftSwipeCircle.setVisibility(((valLeftSwipe == -1) || (valLeftSwipe == 2 && transaction.movement == Transaction.t_pays)) ? View.GONE : View.VISIBLE);
             holder.imageViewRightSwipeCircle.setVisibility(((valRightSwipe == -1) || (valRightSwipe == 2 && transaction.movement == Transaction.t_pays)) ? View.GONE : View.VISIBLE);
@@ -653,6 +716,7 @@ public class TransactionsFragment extends Fragment {
             }
 
             holder.textViewTimestamp.setText(transaction.timestamp);
+            holder.textViewDescription.setText(transaction.description);
 
             //region [Handle transactionConstraintLayout: display description]
             holder.transactionConstraintLayout.setOnTouchListener(new View.OnTouchListener() {
@@ -675,7 +739,7 @@ public class TransactionsFragment extends Fragment {
             holder.textViewSender.setText(transaction.debtor.getName());
             holder.imageViewSenderLine.setColorFilter(transaction.debtor.color);
 
-            holder.textViewAmount.setText(transaction.getAmount());
+            holder.textViewAmount.setText(transaction.displayAmount());
 
             if (transaction.movement == Transaction.t_owes) {
                 holder.textViewMovement.setText(R.string.owes);
@@ -684,7 +748,6 @@ public class TransactionsFragment extends Fragment {
                 holder.textViewMovement.setText(R.string.pays);
                 holder.textViewMovement.setTypeface(null, Typeface.BOLD);
             }
-
 
             holder.textViewMovement.setTextColor(transaction.blendedColors(.5f));
 
@@ -695,57 +758,12 @@ public class TransactionsFragment extends Fragment {
 
         @Override
         public int getItemCount() {
-            return transactions.getData().size();
-        }
-
-        public void addItem(Transaction transaction) {
-            transactions.add(transaction);
-            transactions.upload(activity);
-            notifyDataSetChanged();
-        }
-
-        public void removeItem(int position) {
-            transactions.removeAt(position);
-            transactions.upload(activity);
-            notifyItemRemoved(position);
-        }
-
-        public void restoreItem(Transaction item, int position) {
-            /*transactions.add(position, item);
-            Transaction.sortByTransactions(transactions, sortByStruct);
-            int i = Transaction.getId(transactions, item);
-
-            Transaction.writeToSharedPreferences(activity, transactions);
-            notifyItemInserted(position);*/
-
-            transactions.add(item);
-            transactions.upload(activity);
-            if(transactions.getPosition(item) != -1)
-                notifyItemInserted(transactions.getPosition(item));
-            else
-                notifyDataSetChanged();
-        }
-
-        public void modify(int position, Transaction t){
-            removeItem(position);
-            restoreItem(t, position);
-        }
-
-        public void resetItem(int position){
-            Transaction t = transactions.getAtPosition(position);
-
-            modify(position, t);
-        }
-
-        public void update(TransactionList transactions) {
-            this.transactions = transactions;
-            transactions.upload(activity);
-            notifyDataSetChanged();
+            return group.transactionList.size();
         }
 
         public void sort(SortByStruct sortByStruct) {
             this.sortByStruct = sortByStruct;
-            transactions.sort(sortByStruct);
+            group.transactionList.sort(sortByStruct);
             notifyDataSetChanged();
         }
 
@@ -756,6 +774,7 @@ public class TransactionsFragment extends Fragment {
             ImageView imageViewRightSwipeCircle;
 
             TextView textViewTimestamp;
+            TextView textViewDescription;
 
             ImageView imageViewSenderIcon;
             TextView textViewSender;
@@ -777,6 +796,7 @@ public class TransactionsFragment extends Fragment {
                 transactionConstraintLayout.setOnCreateContextMenuListener(this);
 
                 textViewTimestamp = itemView.findViewById(R.id.textViewTimestamp);
+                textViewDescription = itemView.findViewById(R.id.textViewDescription);
 
                 imageViewSenderIcon = itemView.findViewById(R.id.imageViewSenderIcon);
                 textViewSender = itemView.findViewById(R.id.textViewSender);
@@ -792,19 +812,19 @@ public class TransactionsFragment extends Fragment {
 
             @Override
             public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
-                menu.add(Menu.NONE, 0, 0, "Modify").setOnMenuItemClickListener(onChange);
-                menu.add(Menu.NONE, 1, 1, "Duplicate").setOnMenuItemClickListener(onChange);
+                menu.add(Menu.NONE, 0, 0, r.getString(R.string.modify)).setOnMenuItemClickListener(onChange);
+                menu.add(Menu.NONE, 1, 1, r.getString(R.string.duplicate)).setOnMenuItemClickListener(onChange);
 
-                if(transactionsAdapter.transactions.getList().get(getAdapterPosition()).movement == Transaction.t_owes)
-                    menu.add(Menu.NONE, 2, 2, "Register payment").setOnMenuItemClickListener(onChange);
+                if(group.transactionList.getList().get(getAdapterPosition()).movement == Transaction.t_owes)
+                    menu.add(Menu.NONE, 2, 2, r.getString(R.string.register_payment)).setOnMenuItemClickListener(onChange);
 
-                menu.add(Menu.NONE, 3, 3, "Delete").setOnMenuItemClickListener(onChange);
+                menu.add(Menu.NONE, 3, 3, r.getString(R.string.delete)).setOnMenuItemClickListener(onChange);
             }
 
             private final MenuItem.OnMenuItemClickListener onChange = new MenuItem.OnMenuItemClickListener() {
                 @Override
                 public boolean onMenuItemClick(MenuItem item) {
-                    Transaction t = transactionsAdapter.transactions.getList().get(getAdapterPosition());
+                    Transaction t = group.transactionList.getList().get(getAdapterPosition());
 
                     switch (item.getItemId()){
                         case 0: //Edit
@@ -891,7 +911,7 @@ public class TransactionsFragment extends Fragment {
             if(viewHolder.getAdapterPosition() == -1)
                 return makeMovementFlags(0, 0);
 
-            Transaction t = transactionsAdapter.transactions.getList().get(viewHolder.getAdapterPosition());
+            Transaction t = group.transactionList.getList().get(viewHolder.getAdapterPosition());
 
             return makeMovementFlags(0, ((rightSwipe == -1 || (rightSwipe == 2 && t.movement == Transaction.t_pays)) ? 0 : ItemTouchHelper.LEFT)
                     | ((leftSwipe == -1 || (leftSwipe == 2 && t.movement == Transaction.t_pays)) ? 0 : ItemTouchHelper.RIGHT));
@@ -904,14 +924,18 @@ public class TransactionsFragment extends Fragment {
 
         @Override
         public void onChildDraw(@NonNull Canvas c, @NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, float dX, float dY, int actionState, boolean isCurrentlyActive) {
+            View itemView = viewHolder.itemView;
+            int itemHeight = itemView.getHeight();
+
+            clearCanvas(c, (float) itemView.getLeft(), (float) itemView.getTop(), itemView.getLeft() + dX, (float) itemView.getBottom());
+            clearCanvas(c, itemView.getRight() + dX, (float) itemView.getTop(), (float) itemView.getRight(), (float) itemView.getBottom());
+
             super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive);
 
             if(viewHolder.getAdapterPosition() == -1)
                 return;
 
-            Transaction t = transactionsAdapter.transactions.getList().get(viewHolder.getAdapterPosition());
-            View itemView = viewHolder.itemView;
-            int itemHeight = itemView.getHeight();
+            Transaction t = group.transactionList.getList().get(viewHolder.getAdapterPosition());
 
             boolean isCancelled = ((dX == 0) && !isCurrentlyActive) || (((dX>0) ? leftSwipe : rightSwipe) == -1)
                     || ((((dX>0) ? leftSwipe : rightSwipe) == 2) && t.movement == Transaction.t_pays);
@@ -988,7 +1012,7 @@ public class TransactionsFragment extends Fragment {
         @Override
         public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int i) {
             final int position = viewHolder.getAdapterPosition();
-            final Transaction transaction = mAdapter.transactions.getList().get(position);
+            final Transaction transaction = group.transactionList.getList().get(position);
 
             switch((prevdX > 0) ? leftSwipe : rightSwipe){
                 case 0:
@@ -1011,26 +1035,24 @@ public class TransactionsFragment extends Fragment {
     }
 
     private void editTransaction(final Activity activity, final TransactionsAdapter transactionsAdapter, final int position){
-        final Transaction transaction = transactionsAdapter.transactions.getList().get(position);
+        final Transaction transaction = group.transactionList.getList().get(position);
 
-        final List<Member> memberList = Member.readFromSharedPreferences(activity);
-
-        final List<String> memberNameList = Member.getNameList(memberList);
+        final List<String> memberNameList = Member.getNameList(group.memberList);
 
         if(!memberNameList.contains(transaction.debtor.getName())) {
             memberNameList.add(transaction.debtor.getName());
-            memberList.add(new Member(transaction.debtor.getName()));
+            group.memberList.add(new Member(transaction.debtor.getName()));
         }
         if(!memberNameList.contains(transaction.lender.getName())) {
             memberNameList.add(transaction.lender.getName());
-            memberList.add(new Member(transaction.lender.getName()));
+            group.memberList.add(new Member(transaction.lender.getName()));
         }
 
         AlertDialog.Builder builder = new AlertDialog.Builder(activity);
         LayoutInflater inflater = requireActivity().getLayoutInflater();
         View dialog = inflater.inflate(R.layout.dialog_create_transaction, null);
 
-        builder.setTitle(r.getString(R.string.edittransaction));
+        builder.setTitle(r.getString(R.string.edit_transaction));
         builder.setView(dialog);
 
         final EditText editTextDescription = dialog.findViewById(R.id.editTextDescription);
@@ -1064,14 +1086,18 @@ public class TransactionsFragment extends Fragment {
             public void onClick(DialogInterface dialog, int id) {
                 shouldRefresh[0] = false;
 
-                transactionsAdapter.modify(position,
-                        new Transaction(editTextDescription.getText().toString(),
-                                Member.findMember(memberList, spinnerDebtor.getSelectedItem().toString()),
-                                Member.findMember(memberList, spinnerLender.getSelectedItem().toString()),
-                                Float.parseFloat(editTextAmount.getText().toString()),
-                                transaction.timestamp,
-                                (spinnerMovement.getSelectedItemPosition() == 0)
-                        ));
+                Transaction t = new Transaction(
+                        editTextDescription.getText().toString(),
+                        Member.findMember(group.memberList, spinnerDebtor.getSelectedItem().toString()),
+                        Member.findMember(group.memberList, spinnerLender.getSelectedItem().toString()),
+                        Float.parseFloat(editTextAmount.getText().toString()),
+                        transaction.timestamp,
+                        (spinnerMovement.getSelectedItemPosition() == 0)
+                );
+
+                t.setNodeId(transaction.getNodeId());
+
+                t.upload(roomKey, null);
             }
         })
                 .setNegativeButton(r.getString(R.string.cancel), null);
@@ -1080,7 +1106,7 @@ public class TransactionsFragment extends Fragment {
             @Override
             public void onDismiss(DialogInterface dialog) {
                 if(shouldRefresh[0])
-                    transactionsAdapter.resetItem(position);
+                    transactionsAdapter.notifyItemChanged(position);
             }
         });
 
@@ -1133,13 +1159,23 @@ public class TransactionsFragment extends Fragment {
 
             @Override
             public void onNothingSelected(AdapterView<?> parentView) {}
-
         });
     }
 
     private void duplicateTransaction(final Activity activity, final TransactionsAdapter transactionsAdapter, final Transaction transaction){
-        transactionsAdapter.addItem(transaction);
-        editTransaction(activity, transactionsAdapter, transactionsAdapter.transactions.getPosition(transaction));
+        final Transaction t = transaction.copy();
+
+        if(t.description.equals(""))
+            t.description = "Duplicate";
+        else
+            t.description += " - Duplicate";
+
+        group.add(t, new OnCompleteListener() {
+            @Override
+            public void onComplete(@NonNull Task task) {
+                editTransaction(activity, transactionsAdapter, group.transactionList.getPosition(t));
+            }
+        });
     }
 
     private void payTransaction(final Activity activity, final TransactionsAdapter transactionsAdapter, final Transaction transaction){
@@ -1153,54 +1189,30 @@ public class TransactionsFragment extends Fragment {
         if(paymentSetCurDate)
             t.timestamp = new SimpleDateFormat(Transaction.timeStampFormat, Locale.getDefault()).format(new Date());
 
-        transactionsAdapter.addItem(t);
+        group.add(t, null);
     }
 
     private void deleteTransaction(final Activity activity, final TransactionsAdapter transactionsAdapter, final int position){
-        final Transaction transaction = transactionsAdapter.transactions.getList().get(position);
+        final Transaction transaction = group.transactionList.getList().get(position);
 
-        transactionsAdapter.removeItem(position);
-
-        Snackbar snackbar = Snackbar
-                .make(activity.findViewById(android.R.id.content), r.getString(R.string.transactionremovedfromthelist), Snackbar.LENGTH_LONG);
-        snackbar.setAction(r.getString(R.string.undo), new View.OnClickListener() {
+        //transactionsAdapter.removeItem(position);
+        groupRef.child("transactions").child(transaction.getNodeId()).removeValue().addOnCompleteListener(new OnCompleteListener<Void>() {
             @Override
-            public void onClick(View view) {
-                transactionsAdapter.restoreItem(transaction, position);
-            }
-        });
-
-        snackbar.setActionTextColor(Color.YELLOW);
-        snackbar.show();
-    }
-
-    /*private void enableSwipeToDeleteAndUndo(final Activity activity, final TransactionsAdapter mAdapter, final RecyclerView recyclerView, boolean editSwipe, boolean deleteSwipe) {
-        SwipeToDeleteCallback swipeToDeleteCallback = new SwipeToDeleteCallback(requireContext()) {
-            @Override
-            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int i) {
-                final int position = viewHolder.getAdapterPosition();
-                final Transaction item = mAdapter.transactions.getList().get(position);
-
-                mAdapter.removeItem(position);
+            public void onComplete(@NonNull Task<Void> task) {
+                //transactionsAdapter.notifyItemRemoved(position);
 
                 Snackbar snackbar = Snackbar
-                        .make(activity.findViewById(android.R.id.content), r.getString(R.string.transactionremovedfromthelist), Snackbar.LENGTH_LONG);
+                        .make(activity.findViewById(android.R.id.content), r.getString(R.string.transaction_removed_from_the_list), Snackbar.LENGTH_LONG);
                 snackbar.setAction(r.getString(R.string.undo), new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
-                        mAdapter.restoreItem(item, position);
-                        recyclerView.scrollToPosition(position);
+                        transaction.upload(roomKey, null);
                     }
                 });
 
                 snackbar.setActionTextColor(Color.YELLOW);
                 snackbar.show();
-
             }
-        };
-        SwipeToDeleteCallback swipeToDeleteCallback = new SwipeToDeleteCallback(requireContext(), activity, mAdapter, recyclerView, false, true);
-
-        ItemTouchHelper itemTouchhelper = new ItemTouchHelper(swipeToDeleteCallback);
-        itemTouchhelper.attachToRecyclerView(recyclerView);
-    }*/
+        });
+    }
 }

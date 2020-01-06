@@ -27,15 +27,28 @@
         android:id="@+id/textViewTimestamp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_row="0"
-        android:layout_column="0"
         android:paddingStart="2dp"
-        android:paddingEnd="64dp"
         android:text="dd/MM/yyyy, hh:mm"
         android:textSize="12dp"
         android:clickable="false"
         android:focusable="false"
         app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/textViewDescription"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:maxWidth="224dp"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:gravity="end"
+        android:clickable="false"
+        android:focusable="false"
+        android:paddingEnd="2dp"
+        android:text="@string/description"
+        android:textSize="12dp"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <ImageView

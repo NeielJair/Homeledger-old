@@ -1,28 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string-array name="choose_sender">
-        <item>Debtor</item>
+        <item>@string/debtor</item>
     </string-array>
 
     <string-array name="choose_recipient">
-        <item>Lender</item>
+        <item>@string/lender</item>
     </string-array>
 
     <string-array name="choose_movement">
-        <item>Owes</item>
-        <item>Pays</item>
+        <item>@string/owes</item>
+        <item>@string/pays</item>
     </string-array>
 
     <string-array name="choose_member">
-        <item>Member</item>
+        <item>@string/member</item>
     </string-array>
     <!-- Preferences -->
     <string-array name="transaction_actions">
-        <item>Not set</item>
-        <item>Modify</item>
-        <item>Duplicate</item>
-        <item>Register payment</item>
-        <item>Delete</item>
+        <item>@string/Not_set</item>
+        <item>@string/modify</item>
+        <item>@string/duplicate</item>
+        <item>@string/register_payment</item>
+        <item>@string/delete</item>
     </string-array>
 
     <string-array name="transaction_actions_values">

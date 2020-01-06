@@ -13,6 +13,8 @@ import android.os.Build;
 import androidx.core.app.NotificationCompat;
 import android.util.Log;
 
+import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 import com.njair.homeledger.R;
@@ -24,18 +26,19 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
 
     @Override
     public void onNewToken(String token) {
-        Log.d("MyFirebaseMsgService", "Refreshed token: " + token);
+        // Get updated InstanceID token.
+        String refreshedToken =           FirebaseInstanceId.getInstance().getToken();
+        FirebaseMessaging.getInstance().subscribeToTopic("all");
+        Log.wtf("Firebase messaging", "Refreshed token: " + refreshedToken);
 
-        // If you want to send messages to this application instance or
-        // manage this apps subscriptions on the server side, send the
-        // Instance ID token to your app server.
-        //sendRegistrationToServer(token);
+        /* If you want to send messages to this application instance or manage this apps subscriptions on the server side, send the Instance ID token to your app server.*/
 
-        sendRegistrationToServer(token);
+        sendRegistrationToServer(refreshedToken);
     }
 
     private void sendRegistrationToServer(String token) {
         // TODO: Implement this method to send token to your app server.
+        Log.wtf("TOKEN ", token);
     }
 
     @Override
@@ -75,7 +78,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                 .setContentText(body)
                 .setContentInfo("Info");
 
-        notificationManager.notify(new Random().nextInt(), notificationBuilder.build());
+        notificationManager.notify(1, notificationBuilder.build());
     }
 
     private void showNotification(String title, String body){

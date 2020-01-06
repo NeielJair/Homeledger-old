@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content">
 
@@ -10,6 +9,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:paddingStart="4dp"
+        android:paddingEnd="4dp"
         android:paddingTop="8dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
@@ -18,25 +18,25 @@
             android:id="@+id/radioButtonTimestamp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Date" />
+            android:text="@string/date" />
 
         <RadioButton
             android:id="@+id/radioButtonMember"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Member" />
+            android:text="@string/member" />
 
         <RadioButton
             android:id="@+id/radioButtonAmount"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Amount" />
+            android:text="@string/amount" />
 
         <RadioButton
             android:id="@+id/radioButtonMovement"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Movement" />
+            android:text="@string/movement" />
     </RadioGroup>
 
     <Spinner
@@ -71,7 +71,7 @@
             android:id="@+id/textViewLowestToHighest"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Lowest to highest"
+            android:text="@string/lowest_to_highest"
             android:textColor="@color/black_de" />
     </LinearLayout>
 

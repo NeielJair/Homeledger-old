@@ -17,21 +17,23 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <PreferenceCategory app:title="Transactions">
+    <PreferenceCategory app:title="@string/title_transactions">
         <DropDownPreference
             android:entries="@array/transaction_actions"
             android:entryValues="@array/transaction_actions_values"
             android:key="pref_leftSwipe"
-            android:title="Left swipe"
+            android:title="@string/swipe_to_the_right"
             android:defaultValue="1"
             android:icon="@drawable/ic_duplicate_color_24dp"
             app:useSimpleSummaryProvider="true" />
+
+        <!-- Right swipe means from the left and viceversa -->
 
         <DropDownPreference
             android:entries="@array/transaction_actions"
             android:entryValues="@array/transaction_actions_values"
             android:key="pref_rightSwipe"
-            android:title="Right swipe"
+            android:title="@string/swipe_to_the_left"
             android:defaultValue="3"
             android:icon="@drawable/ic_trash_color_24dp"
             app:useSimpleSummaryProvider="true" />
@@ -39,5 +41,5 @@
     <CheckBoxPreference
         android:defaultValue="true"
         android:key="pref_payment_curentDate"
-        android:title="Set current date to payments" />
+        android:title="@string/set_current_date_to_payments" />
 </PreferenceScreen>

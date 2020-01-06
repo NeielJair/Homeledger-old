@@ -5,14 +5,8 @@
     app:popupTheme="@style/AppTheme.PopupOverlay" >
 
     <item
-        android:id="@+id/actionbar_search"
-        android:icon="@drawable/ic_search_white_24dp"
-        android:title="Search"
-        app:showAsAction="ifRoom" />
-
-    <item
-        android:id="@+id/actionbar_sortby"
+        android:id="@+id/actionbar_sortBy"
         android:icon="@drawable/ic_list_white_24dp"
-        android:title="Sort By"
+        android:title="@string/sort_by"
         app:showAsAction="ifRoom" />
 </menu>
