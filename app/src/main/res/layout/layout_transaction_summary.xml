@@ -2,7 +2,7 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/constraintlayout_transaction"
+    android:id="@+id/constraintLayout_transaction"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="@drawable/background_white_pressable"
@@ -10,43 +10,71 @@
     android:focusable="true"
     android:layout_marginTop="2dp">
 
-    <ImageView
-        android:id="@+id/imageViewSenderIcon"
+    <TextView
+        android:id="@+id/textViewTimestamp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:paddingStart="8dp"
+        android:text="dd/MM/yyyy, hh:mm"
+        android:textSize="12dp"
+        android:clickable="false"
+        android:focusable="false"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/textViewDescription"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:maxWidth="224dp"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:gravity="end"
+        android:clickable="false"
+        android:focusable="false"
+        android:paddingEnd="2dp"
+        android:text="@string/description"
+        android:textSize="12dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ImageView
+        android:id="@+id/imageViewDebtorIcon"
+        android:layout_width="@dimen/member_icon_size"
+        android:layout_height="@dimen/member_icon_size"
         android:clickable="false"
         android:focusable="false"
         android:tint="@color/colorPrimary"
-        app:layout_constraintBottom_toTopOf="@+id/textViewSender"
-        app:layout_constraintEnd_toEndOf="@+id/textViewSender"
-        app:layout_constraintStart_toStartOf="@+id/textViewSender"
-        app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/ic_face_white_32dp" />
+        app:layout_constraintBottom_toTopOf="@+id/textViewDebtor"
+        app:layout_constraintEnd_toEndOf="@+id/textViewDebtor"
+        app:layout_constraintStart_toStartOf="@+id/textViewDebtor"
+        app:layout_constraintTop_toBottomOf="@+id/textViewTimestamp"
+        app:srcCompat="@drawable/ic_person_outline_white_32dp" />
 
     <TextView
-        android:id="@+id/textViewSender"
+        android:id="@+id/textViewDebtor"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
         android:gravity="right"
-        android:text="Sender Name"
+        android:text="Debtor Name"
         android:clickable="false"
         android:focusable="false"
         android:importantForAccessibility="no"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/imageViewSenderLine"
-        app:layout_constraintTop_toBottomOf="@+id/imageViewSenderIcon" />
+        app:layout_constraintEnd_toStartOf="@+id/imageViewDebtorLine"
+        app:layout_constraintTop_toBottomOf="@+id/imageViewDebtorIcon" />
 
     <ImageView
-        android:id="@+id/imageViewSenderLine"
+        android:id="@+id/imageViewDebtorLine"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:tint="@color/colorPrimary"
         android:clickable="false"
         android:focusable="false"
-        app:layout_constraintBottom_toBottomOf="@+id/textViewSender"
+        app:layout_constraintBottom_toBottomOf="@+id/textViewDebtor"
         app:layout_constraintEnd_toStartOf="@+id/barrierLeft"
-        app:layout_constraintTop_toTopOf="@+id/textViewSender"
+        app:layout_constraintTop_toTopOf="@+id/textViewDebtor"
         app:srcCompat="@drawable/ic_line_black_24dp" />
 
     <TextView
@@ -59,10 +87,10 @@
         android:textColor="@color/colorGray"
         android:focusable="false"
         android:importantForAccessibility="no"
-        app:layout_constraintBottom_toBottomOf="@+id/imageViewRecipientIcon"
+        app:layout_constraintBottom_toBottomOf="@+id/imageViewLenderIcon"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/imageViewRecipientIcon" />
+        app:layout_constraintTop_toTopOf="@+id/imageViewLenderIcon" />
 
     <TextView
         android:id="@+id/textViewAmount"
@@ -75,48 +103,48 @@
         android:clickable="false"
         android:focusable="false"
         android:importantForAccessibility="no"
-        app:layout_constraintBottom_toBottomOf="@+id/imageViewSenderLine"
+        app:layout_constraintBottom_toBottomOf="@+id/imageViewDebtorLine"
         app:layout_constraintEnd_toEndOf="@+id/textViewMovement"
         app:layout_constraintStart_toStartOf="@+id/textViewMovement"
-        app:layout_constraintTop_toTopOf="@+id/imageViewSenderLine" />
+        app:layout_constraintTop_toTopOf="@+id/imageViewDebtorLine" />
 
     <ImageView
-        android:id="@+id/imageViewRecipientIcon"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:id="@+id/imageViewLenderIcon"
+        android:layout_width="@dimen/member_icon_size"
+        android:layout_height="@dimen/member_icon_size"
         android:clickable="false"
         android:focusable="false"
         android:tint="@color/colorAccent"
-        app:layout_constraintBottom_toTopOf="@+id/textViewRecipient"
-        app:layout_constraintEnd_toEndOf="@+id/textViewRecipient"
-        app:layout_constraintStart_toStartOf="@+id/textViewRecipient"
-        app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/ic_face_white_32dp" />
+        app:layout_constraintBottom_toTopOf="@+id/textViewLender"
+        app:layout_constraintEnd_toEndOf="@+id/textViewLender"
+        app:layout_constraintStart_toStartOf="@+id/textViewLender"
+        app:layout_constraintTop_toBottomOf="@+id/textViewTimestamp"
+        app:srcCompat="@drawable/ic_person_outline_white_32dp" />
 
     <TextView
-        android:id="@+id/textViewRecipient"
+        android:id="@+id/textViewLender"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
-        android:gravity="left"
-        android:text="Recipient Name"
+        android:gravity="end"
+        android:text="Lender Name"
         android:clickable="false"
         android:focusable="false"
         android:importantForAccessibility="no"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/imageViewRecipientLine"
-        app:layout_constraintTop_toBottomOf="@+id/imageViewRecipientIcon" />
+        app:layout_constraintStart_toEndOf="@+id/imageViewLenderLine"
+        app:layout_constraintTop_toBottomOf="@+id/imageViewLenderIcon" />
 
     <ImageView
-        android:id="@+id/imageViewRecipientLine"
+        android:id="@+id/imageViewLenderLine"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:tint="@color/colorAccent"
         android:clickable="false"
         android:focusable="false"
-        app:layout_constraintBottom_toBottomOf="@+id/textViewRecipient"
+        app:layout_constraintBottom_toBottomOf="@+id/textViewLender"
         app:layout_constraintStart_toEndOf="@+id/barrierRight"
-        app:layout_constraintTop_toTopOf="@+id/textViewRecipient"
+        app:layout_constraintTop_toTopOf="@+id/textViewLender"
         app:srcCompat="@drawable/ic_arrow_forward_black_24dp" />
 
     <androidx.constraintlayout.widget.Barrier

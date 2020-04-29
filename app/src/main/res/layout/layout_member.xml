@@ -5,32 +5,67 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
 
+    <ImageView
+        android:id="@+id/imageViewMemberIcon"
+        android:layout_width="@dimen/member_icon_size"
+        android:layout_height="@dimen/member_icon_size"
+        android:layout_margin="8dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/ic_person_outline_white_32dp" />
+
+    <!--        android:tint="@color/colorAccent"-->
+
+    <ImageView
+        android:id="@+id/imageViewMemberStar"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:tint="@color/color4"
+        app:layout_constraintEnd_toEndOf="@+id/imageViewMemberIcon"
+        app:layout_constraintTop_toTopOf="@+id/imageViewMemberIcon"
+        app:srcCompat="@drawable/ic_star_white_16dp" />
+
     <TextView
         android:id="@+id/textViewMemberName"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_vertical"
-        android:drawableStart="@drawable/ic_face_white_32dp"
-        android:drawablePadding="5dp"
-        android:drawableTint="@color/colorAccent"
+        android:layout_marginStart="8dp"
         android:gravity="center_vertical"
-        android:paddingStart="8dp"
-        android:paddingEnd="8dp"
         android:paddingTop="8dp"
         android:paddingBottom="8dp"
         android:text="@string/member_name"
         android:textColor="@color/common_google_signin_btn_text_light_default"
         android:textSize="20sp"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/imageViewMemberIcon"
         app:layout_constraintTop_toTopOf="parent"
         tools:ignore="UnusedAttribute" />
+
+    <ImageView
+        android:id="@+id/imageViewLink"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_gravity="end|center_vertical"
+        android:clickable="true"
+        android:contentDescription="@string/delete_member"
+        android:focusable="true"
+        android:paddingStart="0dp"
+        android:paddingTop="4dp"
+        android:paddingEnd="12dp"
+        android:paddingBottom="4dp"
+        android:tint="@color/colorAccent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/imageViewTrash"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/ic_link_white_24dp" />
 
     <ImageView
         android:id="@+id/imageViewTrash"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:layout_gravity="end|center_vertical"
-        android:layout_weight="1"
         android:paddingTop="4dp"
         android:paddingBottom="4dp"
         android:paddingStart="0dp"
@@ -49,7 +84,6 @@
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:layout_gravity="end|center_vertical"
-        android:layout_weight="1"
         android:clickable="true"
         android:focusable="true"
         android:paddingTop="4dp"

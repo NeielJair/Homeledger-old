@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -8,149 +9,13 @@
     tools:activity=".MainActivity"
     tools:showIn="@layout/activity_main">
 
-    <TextView
-        android:id="@+id/textViewMember"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/appearance_in_groups"
-        android:paddingTop="8dp"
-        android:paddingStart="16dp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <LinearLayout
-        android:id="@+id/linearLayout3"
+    <fragment
+        android:id="@+id/nav_host_fragment"
+        android:name="androidx.navigation.fragment.NavHostFragment"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@drawable/bg_transparent_bottom_line"
-        android:orientation="horizontal"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textViewMember">
-
-        <com.njair.homeledger.ui.UserMemberView
-            android:id="@+id/viewUserMember"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="10" />
-
-        <ImageView
-            android:id="@+id/imageViewLogOut"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="end|center_vertical"
-            android:paddingTop="8dp"
-            android:paddingEnd="8dp"
-            android:paddingBottom="8dp"
-            android:tint="@color/colorAccent"
-            android:clickable="true"
-            android:focusable="true"
-            app:srcCompat="@drawable/ic_logout_white_24dp" />
-    </LinearLayout>
-
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fabCreateGroup"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|end"
-        android:layout_margin="@dimen/fab_margin"
-        android:clickable="true"
-        android:focusable="true"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:srcCompat="@drawable/ic_add_white_24dp" />
-
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fabJoinGroup"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|end"
-        android:clickable="true"
-        android:focusable="true"
-        android:scaleX=".65"
-        android:scaleY=".65"
-        app:layout_constraintBottom_toTopOf="@+id/fabCreateGroup"
-        app:layout_constraintEnd_toEndOf="@+id/fabCreateGroup"
-        app:layout_constraintStart_toStartOf="@+id/fabCreateGroup"
-        app:srcCompat="@drawable/ic_group_add_white_24dp" />
-
-    <TextView
-        android:id="@+id/textViewDisplay"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Homeledger"
-        android:textSize="30sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <TextView
-        android:id="@+id/textViewDisplay2"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="α"
-        android:textSize="25sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textViewDisplay"
-        app:layout_constraintVertical_bias="0" />
-
-    <TextView
-        android:id="@+id/textViewDisplay3"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:drawableRight="@drawable/ic_next_black_24dp"
-        android:drawableTint="@color/color4"
-        android:text="@string/create_a_group"
-        app:layout_constraintBottom_toBottomOf="@+id/fabCreateGroup"
-        app:layout_constraintEnd_toStartOf="@+id/fabCreateGroup"
-        app:layout_constraintTop_toTopOf="@+id/fabCreateGroup" />
-
-    <TextView
-        android:id="@+id/textViewDisplay4"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:drawableRight="@drawable/ic_next_black_24dp"
-        android:drawableTint="@color/color4"
-        android:text="@string/join_a_group"
-        app:layout_constraintBottom_toBottomOf="@+id/fabJoinGroup"
-        app:layout_constraintEnd_toStartOf="@+id/fabJoinGroup"
-        app:layout_constraintTop_toTopOf="@+id/fabJoinGroup" />
-
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerview_groups"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/linearLayout3" />
+        android:layout_height="match_parent"
+        app:defaultNavHost="true"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
 </androidx.constraintlayout.widget.ConstraintLayout>
-
-<!--
-     <Button
-        android:id="@+id/logTokenButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="16dp"
-        android:text="Log Token Button"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <Button
-        android:id="@+id/subscribeButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:text="Subscribe"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="@+id/logTokenButton"
-        app:layout_constraintHorizontal_bias="0.369"
-        app:layout_constraintStart_toStartOf="@+id/logTokenButton"
-        app:layout_constraintTop_toBottomOf="@+id/logTokenButton"
-        app:layout_constraintVertical_bias="0.0" />
- -->

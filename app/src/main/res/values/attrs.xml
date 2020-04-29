@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <declare-styleable name="DialogDrawerView">
-        <attr name="innerLayout" format="reference" />
-        <attr name="okButtonText" format="string" />
-        <attr name="cancelButtonText" format="string" />
-    </declare-styleable>
-</resources>

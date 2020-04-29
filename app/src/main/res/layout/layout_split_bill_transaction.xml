@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:custom="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:orientation="vertical">
+
+    <Button
+        android:id="@+id/buttonRemove"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@color/fui_transparent"
+        android:textStyle="normal"
+        android:drawableStart="@drawable/ic_line_black_24dp"
+        android:drawableTint="@color/color4"
+        android:drawablePadding="4dp"
+        android:paddingHorizontal="4dp"
+        android:minHeight="0dp"
+        android:layout_gravity="end"
+        android:text="@string/remove" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <Spinner
+            android:id="@+id/spinnerDebtor"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:paddingTop="8dp"
+            android:paddingBottom="6dp"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:layout_weight="4"
+            android:entries="@array/choose_sender"
+            android:layout_gravity="center_vertical"
+            android:spinnerMode="dialog"/>
+
+        <com.njair.homeledger.ui.views.ToggleView
+            android:id="@+id/toggleMovement"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="?android:selectableItemBackground"
+            android:layout_marginVertical="4dp"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:layout_weight="5"
+            custom:entry_first="@string/owes"
+            custom:entry_second="@string/pays"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <Spinner
+            android:id="@+id/spinnerLender"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="6dp"
+            android:paddingBottom="8dp"
+            android:paddingStart="8dp"
+            android:paddingEnd="4dp"
+            android:layout_weight="4"
+            android:entries="@array/choose_recipient"
+            android:layout_gravity="center_vertical"
+            android:spinnerMode="dialog"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="horizontal"
+            android:layout_weight="5">
+
+            <TextView
+                android:id="@+id/textViewCurrency"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:textColor="@color/black_de"
+                android:textSize="16sp"
+                android:paddingTop="4dp"
+                android:text="$"
+                tools:ignore="HardcodedText" />
+
+            <EditText
+                android:id="@+id/editTextAmount"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="8dp"
+                android:paddingStart="4dp"
+                android:paddingEnd="8dp"
+                android:ems="10"
+                android:hint="@string/amount"
+                android:layout_gravity="center_vertical"
+                android:inputType="numberDecimal"
+                tools:ignore="Autofill" />
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

@@ -11,7 +11,7 @@
         android:ems="10"
         android:maxLength="30"
         android:inputType="textPersonName"
-        android:hint="Group name" />
+        android:hint="@string/group_name" />
 
     <EditText
         android:id="@+id/editTextGroupKey"
@@ -21,5 +21,25 @@
         android:maxLength="30"
         android:inputType="textPersonName"
         android:digits="0,1,2,3,4,5,6,7,8,9,*,qwertzuiopasdfghjklyxcvbnm,_,-"
-        android:hint="Group key" />
+        android:hint="@string/group_id" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <EditText
+            android:id="@+id/editTextPrefix"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:maxLength="3"
+            android:hint="@string/prefix"/>
+
+        <Spinner
+            android:id="@+id/spinnerCurrency"
+            android:layout_width="92dp"
+            android:layout_height="match_parent"
+            android:dropDownWidth="92dp"
+            android:entries="@array/currency_symbols"/>
+    </LinearLayout>
 </LinearLayout>

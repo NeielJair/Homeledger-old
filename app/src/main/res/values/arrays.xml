@@ -1,5 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <array name="themes_values">
+        <item>0</item>
+    </array>
+
+    <array name="member_colors">
+        <item>#FF0000</item>
+        <item>#0000FF</item>
+        <item>#000080</item>
+        <item>#CC00CC</item>
+        <item>#008000</item>
+        <item>#CCCC00</item>
+        <item>#FFA500</item>
+        <item>#800080</item>
+        <item>#CC0066</item>
+        <item>#DAA520</item>
+    </array>
+
+    <string-array name="currency_symbols">
+        <item>$</item>
+        <item>¢</item>
+        <item>£</item>
+        <item>€</item>
+        <item>¥</item>
+        <item>ℍ</item>
+    </string-array>
+
     <string-array name="choose_sender">
         <item>@string/debtor</item>
     </string-array>
@@ -32,4 +58,10 @@
         <item>2</item>
         <item>3</item>
     </string-array>
+
+    <array name="icons_array">
+        <item>@drawable/ic_face_white_32dp</item>
+        <item>@drawable/ic_person_white_32dp</item>
+        <item>@drawable/ic_person_outline_white_32dp</item>
+    </array>
 </resources>

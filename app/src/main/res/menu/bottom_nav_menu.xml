@@ -15,5 +15,4 @@
         android:id="@+id/navigation_members"
         android:icon="@drawable/ic_contacts_black_24dp"
         android:title="@string/title_members" />
-
 </menu>

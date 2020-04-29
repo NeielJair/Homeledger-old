@@ -7,19 +7,19 @@
 
     <fragment
         android:id="@+id/navigation_transactions"
-        android:name="com.njair.homeledger.ui.transactions.TransactionsFragment"
+        android:name="com.njair.homeledger.ui.fragments.TransactionsFragment"
         android:label="@string/title_transactions"
         tools:layout="@layout/fragment_transactions" />
 
     <fragment
         android:id="@+id/navigation_summary"
-        android:name="com.njair.homeledger.ui.summary.SummaryFragment"
+        android:name="com.njair.homeledger.ui.fragments.SummaryFragment"
         android:label="@string/title_summary"
         tools:layout="@layout/fragment_summary" />
 
     <fragment
         android:id="@+id/navigation_members"
-        android:name="com.njair.homeledger.ui.members.MembersFragment"
+        android:name="com.njair.homeledger.ui.fragments.MembersFragment"
         android:label="@string/title_members"
         tools:layout="@layout/fragment_members" />
 </navigation>
